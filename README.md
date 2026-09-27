@@ -1,4 +1,4 @@
-# The Red Book — A Middle-earth Listening Companion
+# The Red Book
 
 A local, book-shaped companion for the Phil Dragash *Lord of the Rings* soundscape. Follow the transcript beside an illustrated regional atlas, keep your place between sessions, and watch the story's focus move across Middle-earth.
 
