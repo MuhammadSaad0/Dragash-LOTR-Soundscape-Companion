@@ -621,9 +621,15 @@
     pageMeta.textContent = currentMeta.pageMeta;
     pageCount.textContent = "Page " + (currentChapterIndex + 1) + " of " + chapters.length;
     document.getElementById('chapter-picker').value = String(currentChapterIndex);
-    document.getElementById("previous-page").disabled = currentChapterIndex === 0;
-    document.getElementById("next-page").disabled = currentChapterIndex === chapters.length - 1;
-    document.getElementById("next-page-player").disabled = currentChapterIndex === chapters.length - 1;
+    var previous = document.getElementById("previous-page");
+    var next = document.getElementById("next-page");
+    var nextPlayer = document.getElementById("next-page-player");
+    previous.disabled = next.disabled = nextPlayer.disabled = false;
+    previous.textContent = currentChapterIndex === 0 ? '‹ Front cover' : '‹ Prev';
+    previous.setAttribute('aria-label', currentChapterIndex === 0 ? 'Front cover' : 'Previous chapter');
+    next.textContent = currentChapterIndex === chapters.length - 1 ? 'Back cover ›' : 'Next ›';
+    next.setAttribute('aria-label', currentChapterIndex === chapters.length - 1 ? 'Back cover' : 'Next chapter');
+    nextPlayer.textContent = currentChapterIndex === chapters.length - 1 ? 'Back cover ›' : 'Turn page ›';
     audioName.textContent = currentChapter.audio;
     setRegion(currentMeta.region);
     renderScenes();
@@ -652,7 +658,11 @@
   function turnPage(delta, autoplay) {
     if (turnLocked) return;
     var target = currentChapterIndex + delta;
-    if (target < 0 || target >= chapters.length) return;
+    if (target < 0 || target >= chapters.length) {
+      savePlace(true);
+      if (window.POC_SHOW_COVER) window.POC_SHOW_COVER(target < 0 ? 'front' : 'back');
+      return;
+    }
     var duration = window.POC_ANIMATE_PAGE ? window.POC_ANIMATE_PAGE(delta) : 0;
     turnLocked = duration > 0;
     loadChapter(target, { autoplay: autoplay !== false });
