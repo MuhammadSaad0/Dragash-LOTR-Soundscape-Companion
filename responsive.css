@@ -1,0 +1,24 @@
+#bookmark-status{position:static;display:inline-flex;align-items:center;gap:6px;margin-top:5px;padding:3px 7px;border:1px solid #b99b6a38;border-radius:2px;color:#d9c7a5;font:12px/1.2 RedBook,Georgia,serif;white-space:nowrap}
+#bookmark-status:empty{display:none}#bookmark-status::before{content:'';display:inline-block;width:7px;height:10px;background:#c4a46d;clip-path:polygon(0 0,100% 0,100% 100%,50% 73%,0 100%)}
+.top-meta br{display:none}.top-meta>strong{display:block}.topbar{align-items:center}.page-turner{margin-top:4px}
+.player:has(.book-player){grid-template-columns:minmax(90px,.65fr) minmax(320px,2.4fr) auto auto}
+.mobile-views{display:none}
+@media(max-width:1100px){.player:has(.book-player){grid-template-columns:minmax(0,1fr) auto}.topbar>div:first-child{padding-left:0}.topbar>div:first-child::before{display:none}#chapter-picker{width:185px}}
+@media(max-width:760px){
+ html,body{height:100%;overflow:hidden}body{height:100dvh}
+ .app{box-sizing:border-box;width:100%;height:100dvh;min-height:0;margin:0;padding:calc(8px + env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom));gap:7px;border-radius:0;overflow:hidden}
+ .app::before{display:none}.topbar{flex:0 0 auto;min-height:0;padding:0;gap:8px;align-items:center;flex-direction:row;text-align:left}.topbar>div:first-child{flex:1;min-width:0}.top-meta{text-align:right}
+ .eyebrow{font-size:10px;line-height:1.3}h1{font-size:clamp(16px,4.5vw,23px);line-height:1.15;margin-top:5px;overflow-wrap:anywhere}
+ .top-meta{max-width:155px;min-width:135px}.top-meta>strong{display:none}.page-turner{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:0}#chapter-picker{grid-column:1/-1;width:100%;max-width:155px;min-width:0;font-size:13px;min-height:30px}.page-turner button{min-height:28px;font-size:14px;padding:2px 7px}#bookmark-status{font-size:11px;margin-top:2px;padding:2px 5px}
+ .mobile-views{display:flex;flex:0 0 30px;justify-content:center;gap:18px;border-bottom:1px solid #b2915f40}.mobile-views button{background:none;border:0;border-bottom:2px solid transparent;color:#c4ab86;padding:3px 14px;font:15px RedBook,serif;cursor:pointer}.mobile-views button[aria-pressed=true]{color:#f0dfba;border-color:#d2b681}
+ .workspace{display:grid;flex:1 1 0;min-height:0;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,44fr) minmax(0,56fr)}.workspace::after{display:none}
+ .map-panel,.side-panel{height:auto;min-height:0;padding:8px 10px}.map-panel{border-bottom:1px solid #ac906055}.panel-head{min-height:22px;padding-bottom:3px}.panel-title{font-size:15px}.map-controls button{min-height:27px}.map-wrap{margin-top:0;min-height:0}
+ .app[data-view=both] .company-ledger{display:none}.app[data-view=both] .now{display:none}
+ .side-panel .cue,.side-panel .cue.current{font-size:18px;line-height:1.42;grid-template-columns:27px minmax(0,1fr);gap:7px;padding:7px 4px}.transcript-cues{padding:4px 4px 14px 0}.side-panel::after{display:none}.now h2{font-size:24px}.now-location{font-size:12px}
+ .app[data-view=map] .workspace,.app[data-view=read] .workspace{grid-template-rows:minmax(0,1fr)}.app[data-view=map] .side-panel,.app[data-view=read] .map-panel{display:none}
+ .company-details{left:0;right:0;max-height:55dvh}.company-note{white-space:normal}.company-names button{min-height:30px}
+ .player:has(.book-player){display:block;flex:0 0 auto;padding:4px 0 0}.player .file-name,.player #jump-button,.player #next-page-player{display:none}.book-player{gap:8px;min-height:42px}.book-player .listen-toggle{width:38px;height:38px}.book-player input.listen-level{display:none}.listen-volume{display:flex}.listen-speed{width:49px;font-size:14px}.listen-state{display:none}
+ .notice.visible{position:absolute;bottom:64px;left:12px;right:12px;z-index:20;font-size:13px;padding:8px}.footer-note{display:none}
+}
+@media(max-width:380px){.listen-volume{display:none}.top-meta{min-width:120px;max-width:130px}#chapter-picker{max-width:130px}.book-player{gap:5px}}
+@media(max-height:500px) and (min-width:761px){.app{padding-top:7px;padding-bottom:7px}.topbar{min-height:0}h1{font-size:20px}.eyebrow{font-size:11px}.company-ledger{display:none}.map-panel,.side-panel{padding:8px 12px}.now h2{font-size:23px}}

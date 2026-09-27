@@ -1,0 +1,18 @@
+# Local audiobook/transcript content is never published.
+transcript-data.js
+*.mp3
+*.m4a
+*.wav
+*.flac
+*.srt
+*.vtt
+LOTR-Audiobook/
+Transcripts/
+Part1/
+Part2/
+Part3/
+__pycache__/
+*.pyc
+.env
+.env.*
+*.log

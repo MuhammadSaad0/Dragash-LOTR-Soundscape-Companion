@@ -1,0 +1,26 @@
+.map-wrap { border: 1px solid #665139; background: #dcca9f; box-shadow: 0 2px 5px #40342130; }
+.map-wrap .map-noise, .map-wrap .map-vignette, .map-wrap .party { display: none; }
+.atlas-plate text { font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif; }
+.atlas-plate .atlas-title { font-size: 29px; font-weight: 400; font-variant: small-caps; letter-spacing: 1.5px; fill: #382d20; }
+.atlas-plate .atlas-folio { font-size: 18px; font-style: italic; fill: #776344; }
+.atlas-plate .atlas-label { paint-order: stroke fill; stroke: #e7d4aa; stroke-width: 3.5px; stroke-linejoin: round; fill: #3b3023; font-weight: 400; }
+.atlas-plate .atlas-town { font-size: 15px; font-weight: 600; letter-spacing: .15px; }
+.atlas-plate .atlas-region { font-size: 19px; font-style: italic; letter-spacing: 1.6px; }
+.atlas-plate .atlas-large { font-size: 32px; letter-spacing: 5px; fill: #765c3c; }
+.atlas-plate .atlas-minor { font-size: 13px; font-style: italic; }
+.atlas-plate .atlas-water { font-size: 15px; font-style: italic; letter-spacing: .6px; fill: #4e6258; }
+.atlas-plate .atlas-subtitle { font-size: 13px; font-style: italic; fill: #675238; }
+.atlas-plate .atlas-imprint { font-size: 9px; letter-spacing: 1.8px; fill: #675238; }
+.atlas-plate .atlas-cardinal { font-size: 12px; fill: #3b3023; }
+.atlas-current { transition: transform .6s ease; }
+.atlas-expand { color:#58472e; background:none; border:0; padding:0 3px; font:23px Georgia,serif; cursor:pointer; line-height:1; }
+#map-panel-kicker { display:none; }
+.atlas-dialog { box-sizing:border-box; width:96vw; height:95vh; max-width:1600px; max-height:none; padding:0; border:1px solid #806a45; background:#292218; color:#e7d4aa; }
+.atlas-dialog::backdrop { background:#19140fe6; }
+.atlas-toolbar { display:flex; align-items:center; gap:20px; height:44px; padding:0 16px; }
+.atlas-toolbar a, .atlas-toolbar button { background:none; border:0; color:#e7d4aa; font:15px Georgia,serif; cursor:pointer; }
+.atlas-toolbar a { margin-right:auto; text-decoration:none; }
+.atlas-toolbar .atlas-close { font-size:26px; }
+.atlas-scroll { height:calc(100% - 44px); overflow:auto; }
+.atlas-scroll svg { display:block; margin:auto; }
+@media (prefers-reduced-motion: reduce) { .atlas-current { transition: none; } }

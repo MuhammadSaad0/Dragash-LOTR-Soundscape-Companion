@@ -1,0 +1,1592 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Shire Journey — Proof of Concept</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --book-face: "Palatino Linotype", "Book Antiqua", "Baskerville", "Iowan Old Style", "Times New Roman", serif;
+      --ink: #203b4a;
+      --muted: #46626c;
+      --quiet: #71858a;
+      --deep: #355b72;
+      --deep-2: #d9e8e7;
+      --panel: #ecf0dc;
+      --panel-2: #d8e7da;
+      --line: #29414a;
+      --gold: #efb84c;
+      --gold-2: #c9892e;
+      --moss: #6aa05c;
+      --water: #4f9fba;
+      --fire: #ef7951;
+      --danger: #b84f50;
+      --pixel-shadow: rgba(20, 42, 49, .35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      height: 100vh;
+      overflow: hidden;
+      color: var(--ink);
+      background: linear-gradient(180deg, #89b5c8 0, #537b98 58%, #355b72 100%);
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      letter-spacing: .01em;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .app {
+      width: min(1480px, 100%);
+      height: 100vh;
+      margin: 0 auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 18px;
+      flex: 0 0 auto;
+      padding: 8px 12px 10px;
+      border: 3px solid var(--line);
+      border-radius: 8px;
+      background: #e8f0e4;
+      box-shadow: 4px 4px 0 var(--pixel-shadow), inset 0 0 0 2px rgba(255,255,255,.6);
+    }
+    .eyebrow {
+      color: #356e7a;
+      font: 700 11px/1.2 "Courier New", monospace;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 4px 0 0; color: #234958; font-size: clamp(24px, 3vw, 38px); font-weight: 700; letter-spacing: -.03em; }
+    .top-meta { text-align: right; color: var(--muted); font-size: 12px; }
+    .top-meta strong { color: var(--ink); font-size: 15px; }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(300px, .9fr);
+      gap: 10px;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .panel {
+      border: 3px solid var(--line);
+      background: var(--panel);
+      box-shadow: 4px 4px 0 var(--pixel-shadow), inset 0 0 0 2px rgba(255,255,255,.5);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 12px;
+      border-bottom: 3px solid var(--line);
+      background: #315f6d;
+      color: #f6f2d8;
+    }
+    .panel-title { font-weight: 700; }
+    .panel-kicker {
+      color: #cde0d3;
+      font: 11px "Courier New", monospace;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .map-panel { min-height: 0; display: flex; flex-direction: column; }
+    .map-wrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      background:
+        linear-gradient(rgba(238, 228, 171, .1), rgba(238, 228, 171, .1)),
+        repeating-linear-gradient(0deg, rgba(32, 73, 67, .11) 0 2px, transparent 2px 32px),
+        repeating-linear-gradient(90deg, rgba(32, 73, 67, .11) 0 2px, transparent 2px 32px),
+        #78a85f;
+      border: 4px solid #213d43;
+      image-rendering: pixelated;
+    }
+    .map-wrap.day { filter: saturate(1.08); }
+    .map-wrap.night { background:
+        linear-gradient(rgba(28, 45, 82, .48), rgba(28, 45, 82, .48)),
+        repeating-linear-gradient(0deg, rgba(21, 50, 66, .16) 0 2px, transparent 2px 32px),
+        repeating-linear-gradient(90deg, rgba(21, 50, 66, .16) 0 2px, transparent 2px 32px),
+        #467d72;
+    }
+    .map-noise {
+      position: absolute; inset: 0; opacity: .22; pointer-events: none;
+      background-image: radial-gradient(rgba(27, 65, 58, .24) 1px, transparent 1px);
+      background-size: 8px 8px;
+      mix-blend-mode: overlay;
+    }
+    .map-vignette {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(21, 57, 57, .2) 100%);
+    }
+    .map-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .map-svg text { fill: #183b43; font: 700 13px "Courier New", monospace; paint-order: stroke; stroke: rgba(232, 238, 195, .9); stroke-width: 4px; }
+    .map-svg .small { fill: #32615c; font-size: 10px; }
+    .map-svg .route { fill: none; stroke: #e0a73d; stroke-width: 8; stroke-linecap: square; stroke-dasharray: 12 10; }
+    .map-svg .route-edge { fill: none; stroke: #5f653f; stroke-width: 14; stroke-linecap: square; }
+    .map-svg .river { fill: none; stroke: #245d74; stroke-width: 44; stroke-linecap: square; }
+    .map-svg .river-shine { fill: none; stroke: #5bb0c2; stroke-width: 8; stroke-linecap: square; stroke-dasharray: 8 15; }
+    .map-svg .hill { fill: #96bd68; stroke: #365f4b; stroke-width: 4; }
+    .map-svg .wood { fill: #3f7652; stroke: #214d4d; stroke-width: 4; }
+    .map-svg .party-field { fill: #bdcf71; stroke: #345a4a; stroke-width: 4; stroke-dasharray: 8 6; }
+    .map-svg .house { fill: #e5db9d; stroke: #263f44; stroke-width: 4; }
+    .map-svg .roof { fill: #b95b4e; stroke: #263f44; stroke-width: 4; }
+    .map-svg .tree { fill: #2c6853; stroke: #1f4650; stroke-width: 4; }
+    .map-svg .trunk { fill: #895c40; stroke: #1f4650; stroke-width: 3; }
+    .map-svg .fence { fill: none; stroke: #725f3f; stroke-width: 5; stroke-dasharray: 3 8; }
+    .map-svg .tile-mark { fill: #9ec675; opacity: .8; }
+    .map-svg .top-hedge { fill: #568d52; stroke: #234c4e; stroke-width: 5; }
+    .map-svg .plaza { fill: url(#pathTiles); stroke: #34564f; stroke-width: 5; }
+    .map-svg .path-edge { fill: none; stroke: #9e7950; stroke-width: 38; stroke-linecap: square; }
+    .map-svg .path { fill: none; stroke: #e4d19a; stroke-width: 29; stroke-linecap: square; }
+    .map-svg .water-fill { fill: url(#waterTiles); stroke: #214e66; stroke-width: 5; }
+    .map-svg .bridge { fill: #a96d4f; stroke: #263f44; stroke-width: 5; stroke-dasharray: 10 6; }
+    .map-svg .stone-wall { fill: #c8bb88; stroke: #3a4e4c; stroke-width: 4; }
+    .map-svg .stone { rx: 7; ry: 7; }
+    .map-svg .bag-hill { fill: #68a254; stroke: #2b5a4c; stroke-width: 5; }
+    .map-svg .roof-detail { fill: none; stroke: #7f493e; stroke-width: 5; stroke-dasharray: 7 7; }
+    .map-svg .house { stroke: #263f44; stroke-width: 5; }
+    .map-svg .door { fill: #5a8660; stroke: #263f44; stroke-width: 5; }
+    .map-svg .window { fill: #83b8c2; stroke: #263f44; stroke-width: 4; }
+    .map-svg .porch { fill: #c08a59; stroke: #263f44; stroke-width: 4; }
+    .map-svg .post { fill: #704c38; }
+    .map-svg .tent { fill: #e0b06e; stroke: #263f44; stroke-width: 4; }
+    .map-svg .tent-roof { fill: #d66e52; stroke: #263f44; stroke-width: 4; }
+    .map-svg .tent-roof.blue { fill: #5d82a8; }
+    .map-svg .small-house { fill: #e9dc9e; }
+    .map-svg .door-small { fill: #62855f; stroke: #263f44; stroke-width: 3; }
+    .map-svg .flower-bed-ground { fill: #5b984e; stroke: #34564f; stroke-width: 4; }
+    .map-svg .flower { stroke: #29484a; stroke-width: 2; }
+    .map-svg .flower.red { fill: #e64f4b; }
+    .map-svg .flower.yellow { fill: #f0c752; }
+    .map-svg .sign-post { fill: #725f3f; }
+    .map-svg .sign-board { fill: #e6d795; stroke: #263f44; stroke-width: 4; }
+
+    .pin {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      padding: 4px 7px 5px;
+      border: 3px solid #203e48;
+      border-radius: 3px;
+      background: #f3edc2;
+      color: #203e48;
+      font: 700 11px "Courier New", monospace;
+      white-space: nowrap;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 3px 3px 0 rgba(31, 59, 61, .3);
+      transition: transform .2s, background .2s, border-color .2s;
+    }
+    .pin::before {
+      content: "";
+      position: absolute;
+      left: 50%; bottom: -8px;
+      width: 8px; height: 8px;
+      transform: translateX(-50%) rotate(45deg);
+      background: inherit;
+      border-right: 3px solid #203e48;
+      border-bottom: 3px solid #203e48;
+    }
+    .pin:hover, .pin.is-current { transform: translate(-50%, -100%) scale(1.05); background: #fff5a7; border-color: #d26d3f; }
+    .pin[data-place="bag-end"] { left: 43%; top: 42%; }
+    .pin[data-place="party-field"] { left: 29%; top: 32%; }
+    .pin[data-place="hobbiton"] { left: 51%; top: 49%; }
+    .pin[data-place="bywater-road"] { left: 62%; top: 56%; }
+    .pin[data-place="east-road"] { left: 83%; top: 70%; }
+
+    .party {
+      position: absolute;
+      left: 33%;
+      top: 60%;
+      width: 92px;
+      height: 54px;
+      transform: translate(-50%, -92%);
+      transition: left 1s ease, top 1s ease;
+      z-index: 4;
+      pointer-events: none;
+    }
+    .sprite {
+      position: absolute;
+      width: 18px; height: 23px;
+      border: 3px solid #1f3942;
+      border-radius: 2px;
+      box-shadow: 3px 4px 0 rgba(31, 57, 64, .35);
+    }
+    .sprite::before {
+      content: "";
+      position: absolute;
+      left: 1px; right: 1px; top: -9px;
+      height: 10px;
+      border-radius: 2px 2px 5px 5px;
+      border: 3px solid #1f3942;
+      background: #c3916e;
+    }
+    .sprite::after {
+      content: "";
+      position: absolute;
+      bottom: -7px; left: -4px;
+      width: 23px; height: 4px;
+      border-radius: 2px;
+      background: rgba(31, 57, 64, .32);
+    }
+    .sprite.bilbo { left: 5px; top: 20px; background: #72964f; }
+    .sprite.frodo { left: 30px; top: 18px; background: #557ba5; }
+    .sprite.gandalf { left: 55px; top: 10px; height: 34px; background: #d6d6ca; }
+    .sprite.gandalf::before { background: #b7c6ca; height: 14px; top: -12px; border-radius: 2px; }
+    .party-label {
+      position: absolute; left: 1px; top: -8px;
+      padding: 3px 6px;
+      border: 2px solid #203e48;
+      border-radius: 3px;
+      background: #f3edc2;
+      color: #203e48;
+      font: 700 10px "Courier New", monospace;
+      white-space: nowrap;
+    }
+    .fireworks {
+      position: absolute; left: 50%; top: 31%;
+      width: 10px; height: 10px; border-radius: 2px;
+      background: var(--fire);
+      box-shadow: 0 0 16px 5px rgba(244, 158, 90, .65), 26px -15px 0 -3px #e5c168, -31px 10px 0 -3px #db756c, 23px 25px 0 -4px #7eb26d, -22px -22px 0 -4px #73aeb0;
+      opacity: 0; transform: scale(.4);
+      transition: opacity .35s, transform .35s;
+    }
+    .map-wrap.party-time .fireworks { opacity: 1; transform: scale(1); animation: sparkle 1.7s infinite alternate; }
+    @keyframes sparkle { from { filter: brightness(.8); } to { filter: brightness(1.7); } }
+    .sun, .moon {
+      position: absolute; right: 11%; top: 10%;
+      width: 46px; height: 46px; border-radius: 50%;
+      opacity: .7;
+    }
+    .sun { background: #e5c168; box-shadow: 0 0 30px rgba(229, 193, 104, .35); }
+    .moon { display: none; background: #c7d3d4; box-shadow: 0 0 26px rgba(176, 201, 222, .35); }
+    .map-wrap.night .sun { display: none; }
+    .map-wrap.night .moon { display: block; }
+    .map-caption {
+      position: absolute; left: 18px; bottom: 15px; z-index: 5;
+      padding: 7px 9px;
+      border: 3px solid #203e48;
+      border-radius: 3px;
+      background: #f3edc2;
+      color: var(--muted); font: 11px "Courier New", monospace;
+      letter-spacing: .07em; text-transform: uppercase;
+      box-shadow: 3px 3px 0 rgba(31, 59, 61, .3);
+    }
+    .map-caption strong { display: block; color: #203e48; font: 700 16px "Trebuchet MS", sans-serif; letter-spacing: 0; text-transform: none; }
+    .legend {
+      position: absolute; right: 18px; bottom: 15px; z-index: 5;
+      display: flex; gap: 9px; align-items: center;
+      padding: 6px 8px;
+      border: 3px solid #203e48;
+      border-radius: 3px;
+      background: #f3edc2;
+      color: #355b65; font-size: 11px;
+      box-shadow: 3px 3px 0 rgba(31, 59, 61, .3);
+    }
+    .legend span { display: inline-flex; gap: 4px; align-items: center; }
+    .legend i { width: 7px; height: 7px; display: inline-block; border-radius: 50%; background: var(--gold); }
+    .legend i.water { background: var(--water); }
+    .legend i.route { background: var(--gold-2); }
+
+    .side-panel { display: flex; flex-direction: column; min-height: 0; }
+    .now {
+      flex: 0 0 auto;
+      padding: 12px;
+      background: #c9e2d7;
+      border-bottom: 3px solid var(--line);
+    }
+    .now-location { color: #376e73; font: 700 11px "Courier New", monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .now h2 { margin: 6px 0 3px; color: #234958; font-size: 21px; }
+    .now p { margin: 0; color: #46626c; font-size: 12px; line-height: 1.35; }
+    .scene-progress { height: 6px; margin-top: 10px; background: rgba(34, 73, 74, .2); border-radius: 2px; overflow: hidden; }
+    .scene-progress > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold-2), var(--gold)); transition: width .2s; }
+    .scene-list { padding: 7px 8px; overflow: auto; flex: 0 0 207px; max-height: 207px; background: #edf0dc; }
+    .scene {
+      display: grid; grid-template-columns: 63px 1fr; gap: 9px; width: 100%;
+      padding: 7px 8px; border: 0; border-left: 3px solid transparent;
+      background: transparent; text-align: left; cursor: pointer; border-radius: 0 4px 4px 0;
+      text-decoration: none;
+    }
+    .scene:hover { background: #d6e5db; }
+    .scene.is-current { border-left-color: #d26d3f; background: #cce1d6; }
+    .scene-time { color: #6f8384; font: 700 11px "Courier New", monospace; padding-top: 2px; }
+    .scene-title { font-size: 13px; color: #203b4a; }
+    .scene-detail { margin-top: 2px; color: #5b7177; font-size: 11px; line-height: 1.25; }
+
+    .transcript {
+      border-top: 3px solid var(--line);
+      padding: 10px 12px 12px;
+      min-height: 0;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      background: #dce8e0;
+    }
+    .transcript-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 9px; }
+    .transcript-head span { color: #517077; font: 700 10px "Courier New", monospace; letter-spacing: .09em; text-transform: uppercase; }
+    .transcript-cues { flex: 1 1 auto; min-height: 0; height: auto; overflow: auto; padding-right: 5px; scroll-behavior: smooth; }
+    .cue { display: block; padding: 5px 7px; color: #6a7b7d; font-size: 12px; line-height: 1.33; border-left: 3px solid transparent; text-decoration: none; }
+    .cue.past { color: #52696e; }
+    .cue.current { color: #203b4a; border-left-color: #d26d3f; background: #fff0a7; }
+    .cue time { display: inline-block; width: 45px; color: #7b8d8e; font: 700 10px "Courier New", monospace; vertical-align: top; padding-top: 3px; }
+
+    .player {
+      display: grid; grid-template-columns: minmax(200px, 1fr) auto auto;
+      flex: 0 0 auto;
+      grid-template-columns: minmax(190px, .75fr) minmax(280px, 1.55fr) auto auto;
+      gap: 10px; align-items: center;
+      padding: 8px 10px;
+      border: 3px solid var(--line);
+      background: #244d5c;
+    }
+    .file-name { min-width: 0; }
+    .file-name small { display: block; color: #c6ddd5; font: 10px "Courier New", monospace; text-transform: uppercase; letter-spacing: .08em; }
+    .file-name strong { display: block; overflow: hidden; margin-top: 3px; color: #f5f0d0; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    audio { width: 100%; height: 38px; accent-color: var(--gold); }
+    .file-picker, .jump {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      min-height: 38px; padding: 0 12px;
+      border: 3px solid #d7b64f; border-radius: 3px;
+      background: #f3edc2; color: #203b4a;
+      cursor: pointer; white-space: nowrap; font-size: 12px;
+    }
+    .file-picker:hover, .jump:hover { border-color: #d26d3f; background: #fff5a7; }
+    .file-picker input { display: none; }
+    .notice {
+      display: none; margin-top: 10px; padding: 10px 12px;
+      border: 1px solid rgba(219, 117, 108, .35); border-radius: 8px;
+      color: #f1c2b6; background: rgba(219, 117, 108, .08); font-size: 12px; line-height: 1.35;
+    }
+    .notice.visible { display: block; }
+    .key {
+      display: inline-block; padding: 2px 5px; border: 1px solid rgba(246, 238, 213, .25); border-radius: 4px;
+      color: var(--ink); font: 10px "Courier New", monospace;
+    }
+    .footer-note { display: none; }
+
+    /* The Red Book presentation: an open folio with a framed map screen. */
+    body {
+      color: #3f3025;
+      background: #2a201a;
+      font-family: var(--book-face);
+      letter-spacing: normal;
+    }
+    .app {
+      width: min(1480px, 100%);
+      height: 100vh;
+      padding: 16px 22px 12px;
+      gap: 10px;
+    }
+    .topbar {
+      padding: 4px 4px 11px;
+      border: 0;
+      border-bottom: 1px solid rgba(215, 180, 116, .3);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      color: #f0dfb5;
+    }
+    .eyebrow {
+      color: #c39b5e;
+      font: italic 13px/1.2 var(--book-face);
+      letter-spacing: .04em;
+      text-transform: none;
+    }
+    h1 {
+      margin: 3px 0 0;
+      color: #f1e1b8;
+      font: 600 clamp(25px, 2.5vw, 35px)/1.05 var(--book-face);
+      letter-spacing: -.015em;
+    }
+    .top-meta {
+      color: #bba47f;
+      font: 12px/1.35 var(--book-face);
+    }
+    .top-meta strong { color: #efdaaa; font: 600 15px var(--book-face); }
+    .page-turner {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+      margin-top: 8px;
+    }
+    .page-turner button {
+      min-height: 24px;
+      padding: 2px 7px;
+      border: 0;
+      border-left: 1px solid rgba(207, 166, 99, .35);
+      background: transparent;
+      color: #d4ad70;
+      cursor: pointer;
+      font: 10px "Courier New", monospace;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .page-turner button:hover:not(:disabled) { color: #f3dfaf; background: rgba(224, 189, 123, .08); }
+    .page-turner button:disabled { color: rgba(187, 164, 127, .35); cursor: default; }
+    .page-count { color: #94734f; font: 9px "Courier New", monospace; letter-spacing: .08em; }
+    .workspace {
+      position: relative;
+      grid-template-columns: minmax(0, 1.48fr) minmax(320px, .82fr);
+      gap: 0;
+      padding: 14px;
+      border: 1px solid #6e4b33;
+      border-radius: 3px;
+      background: #b6875e;
+      box-shadow: 0 10px 24px rgba(0,0,0,.35), inset 0 0 0 2px rgba(235, 204, 145, .3);
+    }
+    .workspace::after {
+      content: "";
+      position: absolute;
+      left: 65.7%;
+      top: 10px;
+      bottom: 10px;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, rgba(74, 47, 33, .45) 12%, rgba(74, 47, 33, .45) 88%, transparent);
+      pointer-events: none;
+    }
+    .panel {
+      border: 0;
+      border-radius: 1px;
+      box-shadow: none;
+      background: #eadfbe;
+      color: #3f3025;
+    }
+    .map-panel {
+      padding: 12px 14px 14px;
+      background: #d9c79e;
+      border-right: 1px solid rgba(88, 57, 36, .35);
+    }
+    .panel-head {
+      padding: 0 2px 8px;
+      border-bottom: 1px solid rgba(100, 69, 45, .4);
+      background: transparent;
+      color: #715238;
+    }
+    .panel-title {
+      font: 700 12px "Courier New", monospace;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .panel-kicker {
+      color: #997655;
+      font: 10px "Courier New", monospace;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .map-wrap {
+      margin-top: 10px;
+      border: 8px solid #263c3a;
+      border-radius: 2px;
+      background: #6e9b5e;
+      box-shadow: 0 0 0 1px #122b2e, 0 5px 0 rgba(61, 40, 27, .45), inset 0 0 0 2px rgba(234, 218, 154, .35);
+      image-rendering: auto;
+    }
+    .map-wrap.day { filter: saturate(1.18) contrast(1.06) brightness(1.02); }
+    .map-wrap.night { filter: saturate(.88) contrast(1.05); }
+    .map-svg { shape-rendering: geometricPrecision; }
+    .map-noise { opacity: .13; mix-blend-mode: soft-light; }
+    .map-caption {
+      left: 12px;
+      bottom: 12px;
+      padding: 5px 7px;
+      border: 1px solid rgba(69, 46, 32, .5);
+      border-radius: 1px;
+      background: rgba(241, 225, 178, .9);
+      color: #78573c;
+      box-shadow: 2px 2px 0 rgba(42, 35, 27, .25);
+    }
+    .map-caption strong {
+      color: #4a3425;
+      font: 700 14px Georgia, "Times New Roman", serif;
+    }
+    .legend { display: none; }
+    .pin {
+      padding: 2px 4px;
+      border: 1px solid rgba(30, 50, 48, .7);
+      border-radius: 1px;
+      background: rgba(239, 222, 169, .82);
+      color: #314745;
+      box-shadow: 1px 1px 0 rgba(31, 42, 40, .3);
+      font: 10px "Courier New", monospace;
+    }
+    .pin::before { display: none; }
+    .pin {
+      display: block;
+      width: 13px;
+      height: 13px;
+      padding: 0;
+      border: 2px solid #31594f;
+      border-radius: 50%;
+      background: #e1c65b;
+      color: transparent;
+      font-size: 0;
+      line-height: 0;
+      box-shadow: 0 2px 0 rgba(31, 42, 40, .35);
+      transform: translate(-50%, -50%);
+    }
+    .pin::before { display: none; }
+    .pin:not(.is-current) { opacity: .62; }
+    .pin.is-current {
+      width: 17px;
+      height: 17px;
+      border: 3px solid #f5e7ab;
+      background: #b85d43;
+      box-shadow: 0 0 0 2px rgba(155, 84, 57, .35), 0 2px 0 rgba(31, 42, 40, .35);
+    }
+    .pin:hover, .pin.is-current { transform: translate(-50%, -50%) scale(1.12); }
+    .party-label { display: none; }
+    .pin:hover, .pin.is-current {
+      background: #f5e7ab;
+      border-color: #a65c3b;
+      transform: translate(-50%, -100%);
+    }
+    .side-panel {
+      position: relative;
+      padding: 20px 25px 14px;
+      background: #eadfbe;
+    }
+    .side-panel::before {
+      display: none;
+    }
+    .now {
+      padding: 4px 0 13px;
+      border-bottom: 1px solid rgba(100, 69, 45, .42);
+      background: transparent;
+    }
+    .now-location {
+      color: #8c5d35;
+      font: 10px "Courier New", monospace;
+      letter-spacing: .12em;
+    }
+    .now h2 {
+      margin: 7px 0 0;
+      color: #493425;
+      font: 600 25px/1.1 var(--book-face);
+    }
+    .now p { display: none; }
+    .scene-progress {
+      height: 3px;
+      margin-top: 13px;
+      background: rgba(124, 86, 52, .16);
+      border-radius: 0;
+    }
+    .scene-progress > div { background: #9b6239; }
+    .scene-list {
+      flex: 0 0 63px;
+      max-height: 63px;
+      padding: 9px 0 7px;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 3px;
+      border-bottom: 1px solid rgba(100, 69, 45, .35);
+      background: transparent;
+      overflow: hidden;
+    }
+    .scene {
+      display: flex;
+      min-width: 0;
+      padding: 4px 3px 5px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      flex-direction: column;
+      gap: 3px;
+      align-items: center;
+      text-align: center;
+      justify-content: center;
+    }
+    .scene::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      margin-bottom: 3px;
+      border: 1px solid #a47f5c;
+      border-radius: 50%;
+    }
+    .scene.is-current::before { background: #984f35; border-color: #984f35; }
+    .scene:hover { background: rgba(155, 98, 57, .08); }
+    .scene.is-current {
+      border-left: 0;
+      border-bottom-color: #984f35;
+      background: rgba(155, 98, 57, .12);
+    }
+    .scene-time {
+      padding-top: 0;
+      color: #a47f5c;
+      font: 9px "Courier New", monospace;
+    }
+    .scene-title {
+      display: none;
+    }
+    .scene-detail { display: none; }
+    .transcript {
+      padding: 16px 0 5px;
+      border-top: 0;
+      background: transparent;
+    }
+    .transcript-head {
+      margin-bottom: 10px;
+      padding-bottom: 7px;
+      border-bottom: 1px solid rgba(100, 69, 45, .26);
+    }
+    .transcript-head span {
+      color: #8a6341;
+      font: 10px "Courier New", monospace;
+      letter-spacing: .12em;
+    }
+    .transcript-cues { padding-right: 5px; }
+    .cue {
+      padding: 8px 0;
+      border: 0;
+      border-bottom: 1px solid rgba(100, 69, 45, .16);
+      color: #9b8266;
+      font: 15px/1.5 var(--book-face);
+    }
+    .cue.past { color: #9b8266; }
+    .cue.current {
+      padding: 11px 0 14px;
+      border: 0;
+      background: transparent;
+      color: #3f3025;
+      font-size: 21px;
+      line-height: 1.48;
+    }
+    .cue.title-cue.current {
+      padding: 7px 0 10px;
+      color: #806a52;
+      font-size: 14px;
+      line-height: 1.42;
+      letter-spacing: .01em;
+    }
+    .cue.title-cue.current::first-letter {
+      float: none;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+      line-height: inherit;
+    }
+    .cue.current::first-letter {
+      float: left;
+      padding: 4px 5px 0 0;
+      color: #984f35;
+      font-size: 38px;
+      line-height: .8;
+    }
+    .cue time {
+      display: block;
+      width: auto;
+      margin-bottom: 4px;
+      color: #a47f5c;
+      font: 9px "Courier New", monospace;
+    }
+    .player {
+      grid-template-columns: 185px minmax(260px, 1fr) auto auto;
+      padding: 7px 10px;
+      border: 1px solid #6e4b33;
+      border-radius: 2px;
+      background: #30231c;
+      box-shadow: 0 5px 12px rgba(0,0,0,.25);
+    }
+    .file-name small {
+      color: #bd9b6b;
+      font: 9px "Courier New", monospace;
+      letter-spacing: .15em;
+    }
+    .file-name strong {
+      color: #f1dfb2;
+      font: 13px var(--book-face);
+    }
+    audio { height: 32px; accent-color: #d2a158; }
+    .file-picker, .jump {
+      min-height: 30px;
+      padding: 0 8px;
+      border: 0;
+      border-left: 1px solid rgba(207, 166, 99, .35);
+      border-radius: 0;
+      background: transparent;
+      color: #e0bd7b;
+      font: 11px "Courier New", monospace;
+      text-transform: uppercase;
+    }
+    .file-picker:hover, .jump:hover { border-color: rgba(207, 166, 99, .35); background: rgba(224, 189, 123, .08); }
+    .notice { margin-top: 0; border-radius: 0; }
+
+    /* Middle-earth cartography: a hand-inked parchment map inside the folio. */
+    .map-panel {
+      background: #d0b681;
+    }
+    .map-wrap {
+      border: 7px solid #67472e;
+      border-radius: 0;
+      background: #dfc390;
+      box-shadow: 0 0 0 1px #3f3024, 0 5px 0 rgba(61, 40, 27, .36), inset 0 0 0 2px rgba(255, 237, 187, .32);
+      image-rendering: auto;
+    }
+    .map-wrap.day, .map-wrap.night {
+      filter: none;
+    }
+    .map-svg {
+      shape-rendering: geometricPrecision;
+    }
+    .map-svg text {
+      fill: #57402d;
+      font-family: var(--book-face);
+      paint-order: normal;
+      stroke: none;
+      stroke-width: 0;
+    }
+    .map-svg .map-title {
+      font: 600 31px/1 var(--book-face);
+      letter-spacing: .22em;
+      fill: #735238;
+    }
+    .map-svg .region-label {
+      font: italic 18px/1 var(--book-face);
+      letter-spacing: .08em;
+      fill: #806247;
+      paint-order: stroke;
+      stroke: #e5cc96;
+      stroke-width: 3px;
+      stroke-linejoin: round;
+    }
+    .map-svg .place-label {
+      font: 600 14px/1 var(--book-face);
+      letter-spacing: .04em;
+      fill: #493326;
+      paint-order: stroke;
+      stroke: #ead19a;
+      stroke-width: 3.5px;
+      stroke-linejoin: round;
+    }
+    .map-svg .small-label {
+      font: italic 13px/1 var(--book-face);
+      fill: #62462f;
+      paint-order: stroke;
+      stroke: #ead19a;
+      stroke-width: 2.5px;
+      stroke-linejoin: round;
+    }
+    .map-svg .forest-label {
+      font: italic 14px/1 var(--book-face);
+      letter-spacing: .1em;
+      fill: #5e4932;
+      paint-order: stroke;
+      stroke: #e0c58e;
+      stroke-width: 4px;
+    }
+    .map-svg .water-label {
+      font: italic 13px/1 var(--book-face);
+      letter-spacing: .12em;
+      fill: #6d8178;
+      paint-order: stroke;
+      stroke: #ead19a;
+      stroke-width: 2.5px;
+    }
+    .map-svg .ghost-label {
+      font: 600 48px/1 var(--book-face);
+      letter-spacing: .16em;
+      fill: rgba(151, 112, 73, .18);
+    }
+    .map-svg .cartouche-title {
+      font: 600 25px/1 var(--book-face);
+      letter-spacing: .12em;
+      fill: #5b3e2b;
+    }
+    .map-svg .cartouche-note {
+      font: italic 12px/1 var(--book-face);
+      fill: #76553a;
+    }
+    .map-svg .compass-label {
+      font: 600 11px/1 var(--book-face);
+      fill: #63452f;
+    }
+    .sun, .moon, .fireworks { display: none; }
+    .map-noise {
+      opacity: .2;
+      mix-blend-mode: multiply;
+      background-image: radial-gradient(rgba(91, 56, 32, .22) .7px, transparent .9px);
+      background-size: 7px 7px;
+    }
+    .map-vignette {
+      background: radial-gradient(ellipse at center, transparent 56%, rgba(83, 50, 30, .22) 100%);
+    }
+    .map-caption {
+      left: 20px;
+      bottom: 17px;
+      padding: 8px 11px 7px;
+      border: 1px solid rgba(91, 59, 37, .68);
+      border-radius: 0;
+      background: rgba(232, 207, 157, .9);
+      color: #705238;
+      box-shadow: 2px 2px 0 rgba(70, 43, 28, .25);
+    }
+    .map-caption strong {
+      color: #4d3625;
+      font: 600 16px var(--book-face);
+    }
+    .map-caption span { font: italic 11px var(--book-face); }
+    .pin {
+      width: 11px;
+      height: 11px;
+      border: 2px solid #ead09b;
+      border-radius: 50%;
+      background: #934235;
+      box-shadow: 0 1px 0 rgba(66, 40, 26, .48);
+      transform: translate(-50%, -50%);
+    }
+    .pin:not(.is-current) { opacity: .55; }
+    .pin.is-current {
+      width: 15px;
+      height: 15px;
+      border: 2px solid #934235;
+      background: #e8cc81;
+      box-shadow: 0 0 0 2px rgba(147, 66, 53, .22), 0 1px 0 rgba(66, 40, 26, .48);
+    }
+    .pin:hover, .pin.is-current { transform: translate(-50%, -50%) scale(1.08); }
+    .cartography-map ~ .pin { display: none; }
+    .regional-map { display: none; }
+    .map-wrap.regional-active .cartography-map { display: none; }
+    .map-wrap.regional-active .regional-map { display: block; }
+    .map-wrap.regional-active .map-caption { display: none; }
+    .regional-map .regional-compass text {
+      fill: #60432e;
+      stroke: none;
+      font: 10px "Courier New", monospace;
+    }
+    .regional-map .place-label {
+      font-size: 16px;
+      font-weight: 700;
+      fill: #3f2c20;
+      stroke: #ead19a;
+      stroke-width: 4px;
+    }
+    .regional-map .small-label {
+      font-size: 12px;
+      fill: #62462f;
+      stroke: #ead19a;
+      stroke-width: 2.5px;
+    }
+    .regional-map .water-label {
+      fill: #5b766f;
+      stroke: #ead19a;
+      stroke-width: 3px;
+    }
+    .regional-map .regional-cartouche text { stroke-width: 0; }
+    .regional-map .regional-cartouche .cartouche-title { fill: #65462f; }
+    .regional-map .regional-cartouche .cartouche-note { fill: #80664c; }
+    .party {
+      width: 19px;
+      height: 19px;
+      transform: translate(-50%, -50%);
+    }
+    .party::before {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 13px;
+      height: 13px;
+      border: 1.5px solid #8c3f32;
+      border-radius: 50%;
+      background: #c35a43;
+      box-shadow: 0 0 0 2px rgba(232, 204, 129, .76), 2px 2px 0 rgba(66, 40, 26, .3);
+    }
+    .party::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      bottom: -3px;
+      width: 3px;
+      height: 6px;
+      background: #8c3f32;
+      transform: rotate(45deg);
+    }
+    .party .sprite { display: none; }
+    .party-label {
+      display: none;
+    }
+
+    @media (max-width: 940px) {
+      body { height: auto; overflow: auto; }
+      .app { height: auto; min-height: 100vh; }
+      .workspace { grid-template-columns: 1fr; }
+      .workspace { flex: 0 0 auto; }
+      .map-panel { min-height: 520px; }
+      .side-panel { min-height: 640px; }
+      .map-wrap { min-height: 460px; }
+      .scene-list { flex-basis: 207px; max-height: 207px; }
+    }
+    @media (max-width: 620px) {
+      .app { padding: 12px; }
+      .topbar { align-items: start; flex-direction: column; }
+      .top-meta { text-align: left; }
+      .map-wrap { min-height: 400px; }
+      .legend { display: none; }
+      .player { grid-template-columns: 1fr; }
+      .file-picker, .jump { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <div id="book-eyebrow" class="eyebrow">Book One · Chapter One</div>
+        <h1 id="book-title">A Long-Expected Party</h1>
+      </div>
+      <div class="top-meta">
+        <strong id="chapter-label">Chapter I</strong><br>
+        <span id="page-meta">The Shire · September 22</span>
+        <div class="page-turner" aria-label="Turn through audiobook chapters">
+          <span id="page-count" class="page-count">Page 1 of 62</span>
+          <button id="previous-page" type="button" aria-label="Previous chapter">‹ Prev</button>
+          <button id="next-page" type="button" aria-label="Next chapter">Next ›</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="workspace" aria-label="Interactive audiobook experience">
+      <section class="panel map-panel" aria-label="Journey map">
+        <div class="panel-head">
+          <div id="map-panel-title" class="panel-title">the shire</div>
+          <div id="map-panel-kicker" class="panel-kicker">regional chart</div>
+        </div>
+        <div id="map" class="map-wrap day">
+          <svg class="map-svg cartography-map" viewBox="0 0 960 620" role="img" aria-label="A hand-drawn parchment map of the Shire around Bag End, Hobbiton, Bywater, and the East Road">
+            <defs>
+              <linearGradient id="parchmentBase" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#f0dda9"></stop><stop offset=".55" stop-color="#e1c58f"></stop><stop offset="1" stop-color="#c6a06b"></stop>
+              </linearGradient>
+              <radialGradient id="parchmentGlow" cx="42%" cy="33%" r="80%">
+                <stop offset="0" stop-color="#fff1c7" stop-opacity=".46"></stop><stop offset=".72" stop-color="#d5ae78" stop-opacity=".12"></stop><stop offset="1" stop-color="#8e623d" stop-opacity=".28"></stop>
+              </radialGradient>
+              <pattern id="parchmentGrain" width="48" height="48" patternUnits="userSpaceOnUse">
+                <rect width="48" height="48" fill="#e3c994"></rect>
+                <path d="M2 12c8 -4 13 4 22 0s14 4 22 0M-8 37c10 -4 17 4 27 0s17 4 29 0" fill="none" stroke="#a47b4d" stroke-width="1" opacity=".11"></path>
+                <circle cx="8" cy="29" r="1" fill="#825936" opacity=".1"></circle><circle cx="36" cy="8" r="1.2" fill="#825936" opacity=".1"></circle>
+              </pattern>
+              <filter id="inkShadow" x="-20%" y="-20%" width="140%" height="150%">
+                <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#5b3d28" flood-opacity=".28"></feDropShadow>
+              </filter>
+              <g id="mountain">
+                <path d="M0 33L15 5L30 33L42 14L59 33Z" fill="#7d5a3e" opacity=".2" stroke="#65452e" stroke-width="2.2" stroke-linejoin="round"></path>
+                <path d="M0 33L15 5L16 33Z" fill="#63462f" opacity=".58"></path>
+                <path d="M30 33L42 14L44 33Z" fill="#63462f" opacity=".48"></path>
+                <path d="M6 29L15 14L23 29M35 29L42 21L50 29" fill="none" stroke="#9a754e" stroke-width="1.5" stroke-linecap="round"></path>
+                <path d="M7 25l7 -3M10 29l8 -3M36 26l6 -2M40 30l7 -3" fill="none" stroke="#60432d" stroke-width="1.2" stroke-linecap="round"></path>
+              </g>
+              <g id="forestPatch">
+                <path d="M6 34C-3 22 5 10 18 11C22 1 36 -2 44 8C56 5 66 15 62 27C71 31 64 43 52 44C39 51 15 48 6 34Z" fill="#596044" opacity=".82" stroke="#453c2d" stroke-width="1.8"></path>
+                <path d="M14 30C6 22 12 14 22 16C27 8 39 10 41 18C51 14 59 21 54 29C61 34 55 40 47 39C37 45 20 42 14 30Z" fill="#72764e" opacity=".54"></path>
+                <path d="M10 33c10 -12 17 -9 25 -21M19 43c8 -14 17 -12 28 -27M36 44c5 -10 12 -12 20 -21" fill="none" stroke="#3f4b38" stroke-width="1.8" stroke-linecap="round" opacity=".9"></path>
+                <circle cx="14" cy="18" r="2.5" fill="#9a9a65" opacity=".65"></circle><circle cx="31" cy="12" r="2.2" fill="#9a9a65" opacity=".55"></circle><circle cx="47" cy="19" r="2.6" fill="#9a9a65" opacity=".6"></circle>
+              </g>
+              <g id="hillLines">
+                <path d="M0 31C12 17 26 5 41 7C56 9 68 20 74 31C54 39 23 40 0 31Z" fill="#b5a06d" opacity=".22" stroke="#745337" stroke-width="1.5"></path>
+                <path d="M8 29C20 19 34 15 48 18C57 20 64 25 68 29" fill="none" stroke="#806346" stroke-width="1.55" stroke-linecap="round"></path>
+                <path d="M18 33C28 25 39 23 51 26C57 27 61 30 64 32" fill="none" stroke="#9b7a50" stroke-width="1.25" stroke-linecap="round"></path>
+              </g>
+              <g id="settlementMark">
+                <circle cx="0" cy="0" r="4.5" fill="#5b3d29" stroke="#edcf91" stroke-width="2"></circle>
+                <path d="M-9 11L-5 6L-1 11M1 11L5 6L9 11" fill="none" stroke="#5b3d29" stroke-width="1.35" stroke-linejoin="round"></path>
+              </g>
+            </defs>
+
+            <rect width="960" height="620" fill="url(#parchmentGrain)"></rect>
+            <rect width="960" height="620" fill="url(#parchmentGlow)"></rect>
+            <rect x="16" y="16" width="928" height="588" fill="none" stroke="#765236" stroke-width="2"></rect>
+            <rect x="23" y="23" width="914" height="574" fill="none" stroke="#a27b4f" stroke-width="1" opacity=".7"></rect>
+
+            <path d="M24 48h22M24 48V26M936 48h-22M936 48V26M24 572h22M24 572v22M936 572h-22M936 572v22" fill="none" stroke="#60432e" stroke-width="2"></path>
+            <path d="M29 53l10 -10M931 53l-10 -10M29 567l10 10M931 567l-10 10" fill="none" stroke="#876344" stroke-width="1.5"></path>
+
+            <text x="480" y="57" text-anchor="middle" class="map-title">THE SHIRE</text>
+            <text x="480" y="79" text-anchor="middle" class="region-label">a chart of the Westfarthing and the East Road</text>
+            <text x="573" y="501" class="ghost-label" transform="rotate(-12 573 501)">ERIADOR</text>
+
+            <path d="M116 138C190 103 291 105 372 140C454 102 568 125 637 168C704 205 730 290 704 354C678 426 603 477 511 495C418 516 319 483 251 452C175 416 112 348 103 269C96 216 89 164 116 138Z" fill="#d7b77e" opacity=".2" stroke="#85603f" stroke-width="1.6" stroke-dasharray="4 9"></path>
+
+            <g aria-label="western and northern hills">
+              <use href="#mountain" transform="translate(82 95) scale(1.28)"></use><use href="#mountain" transform="translate(143 83) scale(.96)"></use>
+              <use href="#mountain" transform="translate(204 100) scale(1.13)"></use><use href="#mountain" transform="translate(265 91) scale(.84)"></use>
+              <use href="#mountain" transform="translate(365 105) scale(1.02)"></use><use href="#mountain" transform="translate(430 94) scale(.82)"></use>
+            </g>
+
+            <g aria-label="forests">
+              <use href="#forestPatch" transform="translate(604 175) scale(.94)"></use>
+              <use href="#forestPatch" transform="translate(498 446) scale(.7)"></use>
+              <use href="#forestPatch" transform="translate(91 430) scale(.64)"></use>
+              <use href="#forestPatch" transform="translate(296 147) scale(.58)"></use>
+              <use href="#forestPatch" transform="translate(536 154) scale(.62)"></use>
+            </g>
+
+            <g aria-label="fields and hill country">
+              <path d="M300 315L397 312Q411 315 414 330L407 364L310 377Q296 373 293 356Z" fill="#b6a871" opacity=".34" stroke="#806346" stroke-width="1.5"></path>
+              <path d="M305 326L409 338M301 340L405 351M298 354L402 364" fill="none" stroke="#8a704d" stroke-width="1.2" opacity=".72"></path>
+              <path d="M377 397L464 389Q478 393 481 408L470 449L390 457Q376 451 371 435Z" fill="#b6a871" opacity=".3" stroke="#806346" stroke-width="1.5"></path>
+              <path d="M383 408L475 402M378 421L473 416M376 435L469 431" fill="none" stroke="#8a704d" stroke-width="1.2" opacity=".72"></path>
+              <path d="M516 187L585 180Q598 184 601 198L588 228L530 229Q515 220 510 205Z" fill="#b6a871" opacity=".28" stroke="#806346" stroke-width="1.4"></path>
+              <path d="M520 195L594 192M516 207L590 205M520 219L585 218" fill="none" stroke="#8a704d" stroke-width="1.1" opacity=".72"></path>
+            </g>
+
+            <g aria-label="named topography">
+              <path d="M92 255C115 232 152 222 184 232C208 240 222 258 218 279C202 293 162 298 128 289C108 283 94 271 92 255Z" fill="#b5a06d" opacity=".18" stroke="#806346" stroke-width="1.35"></path>
+              <path d="M108 264C128 246 153 241 177 247C191 251 201 259 205 267M124 278C141 263 161 259 182 264C190 266 196 270 200 274" fill="none" stroke="#8d6c49" stroke-width="1.25" opacity=".82" stroke-linecap="round"></path>
+              <path d="M120 378C150 357 185 358 213 374C232 385 244 405 239 424C217 439 176 440 143 427C125 420 115 400 120 378Z" fill="#9b9660" opacity=".18" stroke="#736346" stroke-width="1.35"></path>
+              <path d="M136 398C154 382 177 379 197 388C211 394 219 404 221 414M151 415C165 403 181 401 196 407C203 410 208 414 211 418" fill="none" stroke="#806346" stroke-width="1.25" opacity=".78" stroke-linecap="round"></path>
+            </g>
+
+            <g aria-label="additional map symbols">
+              <use href="#mountain" transform="translate(716 96) scale(.78)"></use><use href="#mountain" transform="translate(770 132) scale(.62)"></use>
+            </g>
+
+            <g aria-label="old forest region">
+              <path d="M806 338C833 315 872 320 894 341C918 335 944 353 940 378C957 401 940 431 916 438C912 468 878 487 849 474C821 484 795 461 800 435C780 413 785 364 806 338Z" fill="#596044" opacity=".24" stroke="#4b513b" stroke-width="1.8"></path>
+              <use href="#forestPatch" transform="translate(798 333) scale(1.04)"></use><use href="#forestPatch" transform="translate(844 343) scale(.98)"></use><use href="#forestPatch" transform="translate(884 366) scale(.86)"></use><use href="#forestPatch" transform="translate(817 404) scale(.88)"></use><use href="#forestPatch" transform="translate(869 414) scale(.78)"></use>
+              <path d="M807 427c23 -16 42 -12 59 -27M835 463c22 -18 41 -16 63 -31M879 463c14 -12 25 -12 38 -23" fill="none" stroke="#3f4b38" stroke-width="1.7" opacity=".78"></path>
+            </g>
+
+            <path d="M827 -10C786 43 841 104 806 166C773 226 818 279 787 339C751 409 807 467 770 530C747 567 762 598 748 630" fill="none" stroke="#8aa194" stroke-width="18" opacity=".5"></path>
+            <path d="M827 -10C786 43 841 104 806 166C773 226 818 279 787 339C751 409 807 467 770 530C747 567 762 598 748 630" fill="none" stroke="#657b70" stroke-width="2.5"></path>
+            <path d="M878 356C861 382 880 405 866 429C852 449 865 470 855 495" fill="none" stroke="#9aa994" stroke-width="9" opacity=".55"></path>
+            <path d="M878 356C861 382 880 405 866 429C852 449 865 470 855 495" fill="none" stroke="#718273" stroke-width="1.7"></path>
+            <text x="842" y="287" class="water-label" transform="rotate(80 842 287)">BRANDYWINE RIVER</text>
+
+            <path d="M405 254C438 267 455 290 488 304C527 321 560 331 598 349C646 372 703 395 762 424" fill="none" stroke="#9aa994" stroke-width="12" opacity=".42" stroke-linecap="round"></path>
+            <path d="M405 254C438 267 455 290 488 304C527 321 560 331 598 349C646 372 703 395 762 424" fill="none" stroke="#758d85" stroke-width="2.1" stroke-linecap="round"></path>
+            <text x="655" y="397" class="water-label" transform="rotate(19 655 397)">THE WATER</text>
+
+            <g aria-label="roads and route">
+              <path d="M354 242C404 255 427 270 465 283C509 298 545 316 587 335C646 362 704 379 774 393" fill="none" stroke="#b28a58" stroke-width="6" opacity=".45"></path>
+              <path d="M354 242C404 255 427 270 465 283C509 298 545 316 587 335C646 362 704 379 774 393" fill="none" stroke="#65472f" stroke-width="2.5" stroke-linecap="round"></path>
+              <path d="M354 242C327 222 296 205 261 194" fill="none" stroke="#65472f" stroke-width="2.4" stroke-dasharray="1 8" stroke-linecap="round"></path>
+              <path d="M466 284C466 321 478 352 500 381C520 406 528 432 521 462" fill="none" stroke="#65472f" stroke-width="2.4" stroke-dasharray="1 8" stroke-linecap="round"></path>
+              <path d="M587 335C610 359 628 385 645 416" fill="none" stroke="#65472f" stroke-width="2.3" stroke-dasharray="1 8" stroke-linecap="round"></path>
+            </g>
+
+            <g aria-label="settlements and landmarks" filter="url(#inkShadow)">
+              <use href="#settlementMark" transform="translate(354 242)"></use><text x="329" y="226" class="place-label">BAG END</text><text x="335" y="259" class="small-label">the hill</text>
+              <use href="#settlementMark" transform="translate(465 284)"></use><text x="430" y="306" class="place-label">HOBBITON</text>
+              <use href="#settlementMark" transform="translate(587 335)"></use><text x="571" y="357" class="place-label">BYWATER</text>
+              <use href="#settlementMark" transform="translate(774 393)"></use><text x="752" y="374" class="place-label" transform="rotate(-4 752 374)">EAST ROAD</text>
+              <use href="#settlementMark" transform="translate(261 194)"></use><text x="222" y="178" class="place-label">PARTY FIELD</text>
+              <use href="#settlementMark" transform="translate(232 394)"></use><text x="198" y="418" class="place-label">TUCKBOROUGH</text>
+              <use href="#settlementMark" transform="translate(830 496)"></use><text x="790" y="516" class="place-label">BUCKLEBURY</text>
+              <use href="#settlementMark" transform="translate(803 115)"></use><text x="780" y="96" class="place-label">BREE</text>
+              <use href="#settlementMark" transform="translate(150 298)"></use><text x="117" y="289" class="small-label">MICHEL DELVING</text>
+              <use href="#settlementMark" transform="translate(523 171)"></use><text x="500" y="158" class="small-label">WOODY END</text>
+            </g>
+
+            <text x="154" y="161" class="region-label" transform="rotate(-12 154 161)">WESTFARTHING</text>
+            <text x="590" y="267" class="region-label" transform="rotate(12 590 267)">EASTFARTHING</text>
+              <text x="112" y="252" class="small-label" transform="rotate(-8 112 252)">WHITE DOWNS</text>
+              <text x="153" y="464" class="small-label" transform="rotate(-14 153 464)">THE GREEN HILLS</text>
+              <text x="850" y="306" class="region-label" transform="rotate(9 850 306)">BUCKLAND</text>
+              <text x="822" y="414" class="forest-label" transform="rotate(-7 822 414)">THE OLD FOREST</text>
+
+            <g aria-label="map cartouche">
+              <path d="M624 522Q640 506 656 522H885Q901 506 917 522V586Q901 601 885 586H656Q640 601 624 586Z" fill="#e9d29d" fill-opacity=".82" stroke="#6b4930" stroke-width="2"></path>
+              <path d="M637 535H904M637 573H904" fill="none" stroke="#9b744b" stroke-width="1"></path>
+              <text x="770" y="555" text-anchor="middle" class="cartouche-title">THE SHIRE</text>
+              <text x="770" y="572" text-anchor="middle" class="cartouche-note">Hobbiton, Bywater, and the East Road</text>
+            </g>
+
+            <g aria-label="compass rose" transform="translate(870 74)">
+              <circle r="28" fill="none" stroke="#745337" stroke-width="1.4"></circle>
+              <path d="M0 -39L6 -6L39 0L6 6L0 39L-6 6L-39 0L-6 -6Z" fill="none" stroke="#60432e" stroke-width="1.6"></path>
+              <path d="M0 -31L5 0L0 31L-5 0Z M31 0L0 5L-31 0L0 -5Z" fill="#765238" opacity=".65"></path>
+              <text x="0" y="-45" text-anchor="middle" class="compass-label">N</text><text x="46" y="4" text-anchor="middle" class="compass-label">E</text><text x="0" y="54" text-anchor="middle" class="compass-label">S</text><text x="-46" y="4" text-anchor="middle" class="compass-label">W</text>
+            </g>
+
+            <g aria-label="scale" transform="translate(387 576)">
+              <path d="M0 0H82M0 -5V5M41 -5V5M82 -5V5" stroke="#60432e" stroke-width="2"></path>
+              <text x="0" y="18" class="small-label">0</text><text x="36" y="18" class="small-label">1</text><text x="77" y="18" class="small-label">2 leagues</text>
+            </g>
+          </svg>
+
+          <svg id="regional-map" class="map-svg regional-map" viewBox="0 0 960 620" role="img" aria-label="Regional journey map" aria-hidden="true"></svg>
+
+          <!-- legacy game terrain map retained below for reference
+          <svg class="map-svg legacy-map" viewBox="0 0 960 620" role="img" aria-label="Top-down adventure map of Bag End, Hobbiton, the party field, and the east road">
+            <defs>
+              <linearGradient id="grassBase" x1="0" y1="0" x2="0.9" y2="1">
+                <stop offset="0" stop-color="#78b363"></stop><stop offset=".48" stop-color="#6da45b"></stop><stop offset="1" stop-color="#609456"></stop>
+              </linearGradient>
+              <linearGradient id="meadowBase" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#b5d174"></stop><stop offset=".55" stop-color="#a6c86c"></stop><stop offset="1" stop-color="#93b961"></stop>
+              </linearGradient>
+              <linearGradient id="waterBase" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#55b6c0"></stop><stop offset=".45" stop-color="#2f8fa2"></stop><stop offset="1" stop-color="#236b88"></stop>
+              </linearGradient>
+              <linearGradient id="soilBase" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#b78955"></stop><stop offset=".5" stop-color="#906943"></stop><stop offset="1" stop-color="#6e503c"></stop>
+              </linearGradient>
+              <linearGradient id="pathBase" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#f2dfa9"></stop><stop offset=".5" stop-color="#e6ce91"></stop><stop offset="1" stop-color="#c79e65"></stop>
+              </linearGradient>
+              <linearGradient id="forestBase" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#5c9861"></stop><stop offset="1" stop-color="#2d664f"></stop>
+              </linearGradient>
+              <linearGradient id="pineBase" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#5aaf70"></stop><stop offset=".32" stop-color="#2d8058"></stop><stop offset="1" stop-color="#124c47"></stop>
+              </linearGradient>
+              <linearGradient id="pineLight" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#8bc979"></stop><stop offset="1" stop-color="#3a9161"></stop>
+              </linearGradient>
+              <radialGradient id="leafBase" cx="32%" cy="22%" r="85%">
+                <stop offset="0" stop-color="#8bc56e"></stop><stop offset=".35" stop-color="#3c9862"></stop><stop offset="1" stop-color="#1d5b4c"></stop>
+              </radialGradient>
+              <linearGradient id="hillBase" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#a2cd6d"></stop><stop offset=".52" stop-color="#5c9955"></stop><stop offset="1" stop-color="#326a4d"></stop>
+              </linearGradient>
+              <linearGradient id="hillLight" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#d3dc88"></stop><stop offset=".6" stop-color="#a5c36a"></stop><stop offset="1" stop-color="#709953"></stop>
+              </linearGradient>
+              <radialGradient id="doorBase" cx="35%" cy="25%" r="80%">
+                <stop offset="0" stop-color="#b4d577"></stop><stop offset=".55" stop-color="#6da15d"></stop><stop offset="1" stop-color="#3f6d50"></stop>
+              </radialGradient>
+              <linearGradient id="bridgeBase" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#e0a264"></stop><stop offset=".55" stop-color="#af704d"></stop><stop offset="1" stop-color="#70463c"></stop>
+              </linearGradient>
+              <filter id="softShadow" x="-25%" y="-25%" width="150%" height="160%">
+                <feDropShadow dx="0" dy="7" stdDeviation="5" flood-color="#173f3b" flood-opacity=".38"></feDropShadow>
+              </filter>
+              <filter id="smallShadow" x="-30%" y="-30%" width="160%" height="180%">
+                <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#24463e" flood-opacity=".42"></feDropShadow>
+              </filter>
+              <pattern id="grassTiles" width="32" height="32" patternUnits="userSpaceOnUse">
+                <rect width="32" height="32" fill="#6fa55b"></rect>
+                <path d="M0 31H32 M31 0V32" stroke="#659855" stroke-width="1" opacity=".35"></path>
+                <path d="M6 8l3 -4 M18 22l3 -4 M25 12l2 -3" stroke="#8fbd69" stroke-width="2" stroke-linecap="square"></path>
+                <circle cx="11" cy="27" r="1.3" fill="#4f8a55"></circle><circle cx="27" cy="5" r="1.2" fill="#4f8a55"></circle>
+              </pattern>
+              <pattern id="meadowTiles" width="30" height="30" patternUnits="userSpaceOnUse">
+                <rect width="30" height="30" fill="url(#meadowBase)"></rect>
+                <path d="M4 24l3 -5 M17 12l3 -4 M25 26l2 -5" stroke="#7fa85f" stroke-width="2"></path>
+                <circle cx="10" cy="8" r="2" fill="#d5d987"></circle><circle cx="26" cy="17" r="1.5" fill="#d5d987"></circle>
+              </pattern>
+              <pattern id="waterTiles" width="32" height="24" patternUnits="userSpaceOnUse">
+                <rect width="32" height="24" fill="url(#waterBase)"></rect>
+                <path d="M1 7h14 M20 7h9 M7 17h17" stroke="#67bec2" stroke-width="3" stroke-linecap="square"></path>
+                <path d="M4 11h6 M24 21h6" stroke="#3b9eaa" stroke-width="2"></path>
+              </pattern>
+              <pattern id="soilTiles" width="22" height="22" patternUnits="userSpaceOnUse">
+                <rect width="22" height="22" fill="url(#soilBase)"></rect>
+                <path d="M2 7h7 M13 15h7 M3 19h4" stroke="#a27a50" stroke-width="2"></path>
+              </pattern>
+              <g id="pine-tree" filter="url(#smallShadow)">
+                <ellipse cx="30" cy="75" rx="27" ry="8" fill="#396b4c" opacity=".45"></ellipse>
+                <path d="M26 49h9v27h-9z" fill="#76533b" stroke="#3e563f" stroke-width="3"></path>
+                <path d="M30 0L7 30h12L4 50h18L9 70h42L39 50h17L41 30h12z" fill="url(#pineBase)" stroke="#234e4b" stroke-width="4" stroke-linejoin="round"></path>
+                <path d="M30 7L18 28h25z M30 26L12 49h37z M30 46L16 67h29z" fill="url(#pineLight)" opacity=".8"></path>
+                <path d="M13 48h10 M38 30h10 M20 67h10" stroke="#63a965" stroke-width="3" stroke-linecap="square"></path>
+              </g>
+              <g id="round-tree" filter="url(#smallShadow)">
+                <ellipse cx="28" cy="61" rx="25" ry="7" fill="#3f704d" opacity=".4"></ellipse>
+                <path d="M24 39h9v25h-9z" fill="#80563a" stroke="#405642" stroke-width="3"></path>
+                <circle cx="28" cy="27" r="25" fill="url(#leafBase)" stroke="#244f4b" stroke-width="4"></circle>
+                <circle cx="14" cy="37" r="15" fill="#4e9d65"></circle><circle cx="43" cy="37" r="14" fill="#2b7654"></circle>
+                <path d="M15 21c7 -7 17 -9 25 -3" fill="none" stroke="#a0d579" stroke-width="4" stroke-linecap="round" opacity=".72"></path>
+              </g>
+              <g id="flower-cluster">
+                <circle cx="4" cy="6" r="4" fill="#e95c57" stroke="#5a6250" stroke-width="2"></circle>
+                <circle cx="18" cy="15" r="4" fill="#f2cd56" stroke="#5a6250" stroke-width="2"></circle>
+                <circle cx="31" cy="5" r="4" fill="#ec7a59" stroke="#5a6250" stroke-width="2"></circle>
+                <circle cx="45" cy="17" r="4" fill="#f3df6a" stroke="#5a6250" stroke-width="2"></circle>
+              </g>
+            </defs>
+
+            <rect width="960" height="620" fill="url(#grassTiles)"></rect>
+
+            <path d="M0 0H960V92C869 77 794 96 710 82C603 65 519 94 410 78C291 60 207 93 105 76C65 70 31 77 0 87Z" fill="url(#forestBase)" stroke="#2a5d4b" stroke-width="5" filter="url(#softShadow)"></path>
+            <g aria-label="woodland border">
+              <use href="#pine-tree" transform="translate(-10 -9) scale(.9)"></use><use href="#pine-tree" transform="translate(55 -5) scale(1.05)"></use>
+              <use href="#pine-tree" transform="translate(126 -12) scale(.88)"></use><use href="#pine-tree" transform="translate(196 -5) scale(1.1)"></use>
+              <use href="#pine-tree" transform="translate(274 -10) scale(.92)"></use><use href="#pine-tree" transform="translate(346 -5) scale(1.08)"></use>
+              <use href="#pine-tree" transform="translate(428 -9) scale(.9)"></use><use href="#pine-tree" transform="translate(496 -6) scale(1.08)"></use>
+              <use href="#pine-tree" transform="translate(579 -10) scale(.94)"></use><use href="#pine-tree" transform="translate(655 -5) scale(1.1)"></use>
+              <use href="#pine-tree" transform="translate(741 -10) scale(.9)"></use><use href="#pine-tree" transform="translate(812 -5) scale(1.08)"></use>
+              <use href="#pine-tree" transform="translate(892 -12) scale(.96)"></use>
+              <use href="#pine-tree" transform="translate(-21 430) scale(.88)"></use><use href="#pine-tree" transform="translate(912 407) scale(.92)"></use>
+            </g>
+
+            <path d="M0 253C31 237 76 243 101 272C129 304 116 348 77 364C45 378 14 363 0 348Z" fill="url(#waterTiles)" stroke="#245a70" stroke-width="6"></path>
+            <path d="M15 286c27 -11 51 -8 72 6M12 322c26 -10 47 -8 65 3" fill="none" stroke="#7ac9c5" stroke-width="4" stroke-linecap="round"></path>
+
+            <path d="M0 526C115 497 219 548 326 528C463 501 579 557 696 532C810 508 888 535 960 514V620H0Z" fill="url(#waterTiles)" stroke="#24596b" stroke-width="6"></path>
+            <path d="M0 551C119 522 217 570 329 549C460 524 581 580 696 554C808 530 884 556 960 537" fill="none" stroke="#83d0ca" stroke-width="5" stroke-linecap="round"></path>
+            <path d="M0 578C115 551 220 598 331 576C466 551 577 605 700 581C813 559 892 584 960 565" fill="none" stroke="#3b9eaa" stroke-width="4" stroke-linecap="round"></path>
+
+            <path d="M69 96Q83 72 120 81L302 88Q335 95 333 128L320 216Q309 238 278 238L101 229Q70 218 68 190Z" fill="url(#meadowTiles)" stroke="#4f774d" stroke-width="5"></path>
+            <path d="M84 105Q174 83 307 106M83 207Q181 231 311 211M87 103V208M311 105V214" fill="none" stroke="#718e56" stroke-width="3" stroke-dasharray="3 9"></path>
+            <g aria-label="party field decorations" filter="url(#smallShadow)">
+              <path d="M129 171L166 119L203 171Z" fill="#df7659" stroke="#3d5f52" stroke-width="4"></path><path d="M141 169H191V204H141Z" fill="#edcf8b" stroke="#3d5f52" stroke-width="4"></path><path d="M166 119V169H141Z" fill="#b9574c" opacity=".5"></path>
+              <path d="M222 171L257 113L294 171Z" fill="#759cc0" stroke="#3d5f52" stroke-width="4"></path><path d="M234 169H282V204H234Z" fill="#edcf8b" stroke="#3d5f52" stroke-width="4"></path><path d="M257 113V169H234Z" fill="#506f99" opacity=".55"></path>
+              <rect x="105" y="183" width="37" height="10" rx="3" fill="#a56c45" stroke="#4e5e4c" stroke-width="3"></rect><rect x="103" y="196" width="41" height="5" fill="#76523a"></rect>
+              <use href="#flower-cluster" transform="translate(92 117) scale(.75)"></use><use href="#flower-cluster" transform="translate(260 190) scale(.7)"></use>
+            </g>
+
+            <path d="M445 548C440 514 453 481 439 445C423 404 445 371 493 347C550 318 589 313 625 280C651 257 655 225 675 192" fill="none" stroke="#866546" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" filter="url(#smallShadow)"></path>
+            <path d="M445 548C440 514 453 481 439 445C423 404 445 371 493 347C550 318 589 313 625 280C651 257 655 225 675 192" fill="none" stroke="url(#pathBase)" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M445 548C440 514 453 481 439 445C423 404 445 371 493 347C550 318 589 313 625 280C651 257 655 225 675 192" fill="none" stroke="#fff0bd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".42"></path>
+            <path d="M471 358C417 327 355 285 296 236C266 211 239 192 216 178" fill="none" stroke="#866546" stroke-width="29" stroke-linecap="round" filter="url(#smallShadow)"></path>
+            <path d="M471 358C417 327 355 285 296 236C266 211 239 192 216 178" fill="none" stroke="url(#pathBase)" stroke-width="20" stroke-linecap="round"></path>
+            <path d="M514 357C579 354 638 371 696 403C757 437 785 479 816 531" fill="none" stroke="#866546" stroke-width="30" stroke-linecap="round" filter="url(#smallShadow)"></path>
+            <path d="M514 357C579 354 638 371 696 403C757 437 785 479 816 531" fill="none" stroke="url(#pathBase)" stroke-width="21" stroke-linecap="round"></path>
+
+            <g aria-label="meadow details">
+              <use href="#flower-cluster" transform="translate(349 246) scale(.55)"></use><use href="#flower-cluster" transform="translate(546 235) scale(.48)"></use>
+              <use href="#flower-cluster" transform="translate(302 430) scale(.5)"></use><use href="#flower-cluster" transform="translate(579 487) scale(.5)"></use>
+              <ellipse cx="354" cy="309" rx="13" ry="7" fill="#b2a26e" stroke="#667450" stroke-width="3"></ellipse><ellipse cx="372" cy="314" rx="8" ry="5" fill="#c7b47b" stroke="#667450" stroke-width="2"></ellipse>
+              <ellipse cx="592" cy="445" rx="12" ry="7" fill="#b2a26e" stroke="#667450" stroke-width="3"></ellipse><ellipse cx="615" cy="449" rx="8" ry="5" fill="#c7b47b" stroke="#667450" stroke-width="2"></ellipse>
+              <path d="M292 492h57M299 484v17M342 484v17" stroke="#80583c" stroke-width="5" stroke-linecap="round"></path>
+              <path d="M602 285c17 -11 34 -11 51 0M607 292c15 -5 29 -5 43 0" fill="none" stroke="#618652" stroke-width="5" stroke-linecap="round"></path>
+              <path d="M282 275h28M287 267v16M305 267v16" stroke="#866044" stroke-width="4" stroke-linecap="round"></path>
+            </g>
+
+            <g aria-label="Hobbiton village" filter="url(#softShadow)">
+              <path d="M591 191Q598 142 647 132Q696 143 702 191Z" fill="url(#hillBase)" stroke="#356750" stroke-width="4"></path><circle cx="646" cy="174" r="17" fill="url(#doorBase)" stroke="#31574b" stroke-width="3"></circle><circle cx="641" cy="169" r="3" fill="#f2d36e"></circle>
+              <path d="M676 213Q682 153 733 141Q784 154 790 213Z" fill="url(#hillBase)" stroke="#356750" stroke-width="4"></path><circle cx="733" cy="192" r="19" fill="url(#doorBase)" stroke="#31574b" stroke-width="3"></circle><circle cx="728" cy="187" r="3" fill="#f2d36e"></circle>
+              <path d="M768 193Q772 144 814 135Q857 146 862 193Z" fill="url(#hillBase)" stroke="#356750" stroke-width="4"></path><circle cx="813" cy="174" r="16" fill="url(#doorBase)" stroke="#31574b" stroke-width="3"></circle><circle cx="808" cy="169" r="3" fill="#f2d36e"></circle>
+              <path d="M610 218H852" stroke="#748d57" stroke-width="4" stroke-dasharray="4 9"></path>
+              <use href="#flower-cluster" transform="translate(620 221) scale(.7)"></use><use href="#flower-cluster" transform="translate(790 219) scale(.72)"></use>
+            </g>
+
+            <g aria-label="Bag End">
+              <path d="M343 433Q346 355 458 329Q574 354 581 433Z" fill="url(#hillBase)" stroke="#2b5a49" stroke-width="6" filter="url(#softShadow)"></path>
+              <path d="M366 414Q369 362 458 344Q550 364 555 414Z" fill="url(#hillLight)" stroke="#35624d" stroke-width="4"></path>
+              <circle cx="459" cy="386" r="29" fill="#5d8659" stroke="#2b4f4a" stroke-width="5" filter="url(#smallShadow)"></circle><circle cx="459" cy="386" r="19" fill="url(#doorBase)"></circle><circle cx="468" cy="383" r="3" fill="#efd16a"></circle>
+              <path d="M388 421H528" stroke="#6b824e" stroke-width="5" stroke-dasharray="4 8"></path>
+              <use href="#flower-cluster" transform="translate(362 429) scale(.7)"></use><use href="#flower-cluster" transform="translate(500 429) scale(.7)"></use>
+            </g>
+
+            <g aria-label="gardens" filter="url(#smallShadow)">
+              <path d="M103 391Q118 379 148 386L245 405Q257 413 249 440L238 489Q230 501 203 496L111 478Q96 471 98 447Z" fill="url(#meadowBase)" stroke="#557b51" stroke-width="4"></path>
+              <path d="M120 403L229 423M111 428L241 449M106 452L236 474" stroke="#416d4a" stroke-width="4"></path>
+              <path d="M704 391Q719 379 748 386L850 405Q863 414 854 441L845 488Q838 500 808 495L714 477Q699 469 701 444Z" fill="url(#soilTiles)" stroke="#4c714c" stroke-width="5"></path>
+              <path d="M726 400L716 480M758 396L748 487M791 401L781 490M823 407L813 492" stroke="#c1975c" stroke-width="4"></path>
+              <use href="#flower-cluster" transform="translate(125 438) scale(.75)"></use><use href="#flower-cluster" transform="translate(184 412) scale(.66)"></use><use href="#flower-cluster" transform="translate(718 425) scale(.65)"></use><use href="#flower-cluster" transform="translate(793 445) scale(.7)"></use>
+            </g>
+
+            <g aria-label="woodland and hedges">
+              <use href="#round-tree" transform="translate(80 250) scale(.9)"></use><use href="#round-tree" transform="translate(164 267) scale(.78)"></use>
+              <use href="#round-tree" transform="translate(267 329) scale(.72)"></use><use href="#round-tree" transform="translate(605 350) scale(.82)"></use>
+              <use href="#round-tree" transform="translate(805 276) scale(.95)"></use><use href="#round-tree" transform="translate(862 346) scale(.82)"></use>
+              <use href="#round-tree" transform="translate(24 408) scale(.82)"></use><use href="#round-tree" transform="translate(870 458) scale(.9)"></use>
+              <use href="#pine-tree" transform="translate(283 468) scale(.7)"></use><use href="#pine-tree" transform="translate(638 458) scale(.68)"></use>
+            </g>
+
+            <g aria-label="bridge">
+              <rect x="408" y="526" width="97" height="60" rx="4" fill="url(#bridgeBase)" stroke="#3f4f49" stroke-width="6" filter="url(#smallShadow)"></rect>
+              <path d="M419 532V580M438 532V580M457 532V580M476 532V580M495 532V580" stroke="#be8051" stroke-width="5"></path>
+              <path d="M404 531H509M404 580H509" stroke="#4b4d43" stroke-width="6"></path>
+            </g>
+            <g aria-label="fences">
+              <path d="M65 365H171M255 365H340M578 366H650M721 366H887" stroke="#76583e" stroke-width="5" stroke-dasharray="2 15" stroke-linecap="round"></path>
+              <path d="M341 102V158M341 212V263M567 100V142M567 193V239" stroke="#76583e" stroke-width="5" stroke-dasharray="2 15" stroke-linecap="round"></path>
+            </g>
+          </svg>
+          -->
+          <div class="sun" aria-hidden="true"></div>
+          <div class="moon" aria-hidden="true"></div>
+          <div class="fireworks" aria-hidden="true"></div>
+
+          <a class="pin" data-place="bag-end" data-seek="0" href="?at=0" onclick="window.POC_SEEK && window.POC_SEEK(0)">Bag End</a>
+          <a class="pin" data-place="party-field" data-seek="1170" href="?at=1170" onclick="window.POC_SEEK && window.POC_SEEK(1170)">Party Field</a>
+          <a class="pin" data-place="hobbiton" data-seek="420" href="?at=420" onclick="window.POC_SEEK && window.POC_SEEK(420)">Hobbiton</a>
+          <a class="pin" data-place="bywater-road" data-seek="2190" href="?at=2190" onclick="window.POC_SEEK && window.POC_SEEK(2190)">Bywater Road</a>
+          <a class="pin" data-place="east-road" data-seek="3420" href="?at=3420" onclick="window.POC_SEEK && window.POC_SEEK(3420)">East Road</a>
+
+          <div id="party" class="party" aria-label="Bilbo, Frodo, and Gandalf">
+            <div class="party-label">the company</div>
+            <div class="sprite bilbo" title="Bilbo"></div>
+            <div class="sprite frodo" title="Frodo"></div>
+            <div class="sprite gandalf" title="Gandalf"></div>
+          </div>
+          <div class="map-caption"><strong id="map-location">Bag End</strong><span id="map-subtitle">The Hill · Hobbiton</span></div>
+          <div class="legend" aria-label="Map legend">
+            <span><i></i>location</span><span><i class="route"></i>route</span><span><i class="water"></i>water</span>
+          </div>
+          <div class="map-noise" aria-hidden="true"></div>
+          <div class="map-vignette" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <aside class="panel side-panel" aria-label="Chapter timeline and transcript">
+        <div class="now">
+          <div id="scene-location" class="now-location">Bag End · the Hill</div>
+          <h2 id="scene-title">A quiet beginning</h2>
+          <p id="scene-description">The Shire is already talking about Bilbo’s remarkable birthday party.</p>
+          <div class="scene-progress" aria-label="Current scene progress"><div id="scene-progress"></div></div>
+        </div>
+        <div id="scenes" class="scene-list" aria-label="Chapter scenes"></div>
+        <div class="transcript">
+          <div class="transcript-head">
+              <span>Read along</span>
+              <span id="cue-status">ready</span>
+          </div>
+          <div id="transcript-cues" class="transcript-cues" aria-live="polite"></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel player" aria-label="Audiobook controls">
+      <div class="file-name">
+        <small>listen</small>
+        <strong id="audio-name">01 — A Long-Expected Party (2014).mp3</strong>
+      </div>
+      <audio id="audio" controls preload="metadata"></audio>
+      <button id="jump-button" class="jump" type="button">Start chapter</button>
+      <button id="next-page-player" class="jump" type="button">Turn page ›</button>
+    </section>
+    <div id="notice" class="notice" role="alert"></div>
+  <p class="footer-note">Press <span class="key">Space</span> to play or pause. Use the page controls or <span class="key">←</span><span class="key">→</span> to move through the reader; each page loads its own audio, transcript, route, and regional map.</p>
+  </main>
+
+  <script src="transcript-data.js?v=part1-part2-part3-62"></script>
+  <link rel="stylesheet" href="atlas.css?v=1">
+  <link rel="stylesheet" href="red-book.css?v=4">
+  <link rel="stylesheet" href="book-player.css?v=1">
+  <link rel="stylesheet" href="live-company.css?v=3">
+  <link rel="stylesheet" href="responsive.css?v=1">
+  <script src="atlas-maps.js?v=1"></script>
+  <script type="text/plain" id="legacy-inline-app">
+    (function () {
+      "use strict";
+
+      var audio = document.getElementById("audio");
+      var map = document.getElementById("map");
+      var party = document.getElementById("party");
+      var sceneTitle = document.getElementById("scene-title");
+      var sceneLocation = document.getElementById("scene-location");
+      var sceneDescription = document.getElementById("scene-description");
+      var sceneProgress = document.getElementById("scene-progress");
+      var mapLocation = document.getElementById("map-location");
+      var mapSubtitle = document.getElementById("map-subtitle");
+      var sceneList = document.getElementById("scenes");
+      var cueList = document.getElementById("transcript-cues");
+      var cueStatus = document.getElementById("cue-status");
+      var notice = document.getElementById("notice");
+      var audioName = document.getElementById("audio-name");
+      var cues = window.POC_TRANSCRIPT || [];
+      var currentCue = -1;
+      var currentSceneId = "";
+      var audioObjectUrl = null;
+
+      var defaultAudio = location.protocol === "http:"
+        ? "/LOTR-Audiobook/Part1/01%20-%20A%20Long-Expected%20Party%20(2014).mp3"
+        : "/LOTR-Audiobook/Part1/01%20-%20A%20Long-Expected%20Party%20(2014).mp3";
+      var scenes = [
+        { id: "opening", start: 0, end: 685, title: "A quiet beginning", location: "Bag End · the Hill", map: "bag-end", mapTitle: "Bag End", subtitle: "The Hill · Hobbiton", desc: "The Shire is already talking about Bilbo’s remarkable birthday party.", mode: "day" },
+        { id: "arrival", start: 685, end: 1170, title: "The wizard arrives", location: "Hobbiton · Bag End road", map: "hobbiton", mapTitle: "Hobbiton", subtitle: "A cart full of fireworks", desc: "A familiar grey figure arrives with fireworks, secrets, and a taste for spectacle.", mode: "day", fireworks: true },
+        { id: "party", start: 1170, end: 2020, title: "The party field", location: "Hobbiton · party field", map: "party-field", mapTitle: "Party Field", subtitle: "Lights across the Green", desc: "Food, music, lanterns, and a whole Shire full of guests gather under the evening sky.", mode: "day", fireworks: true },
+        { id: "vanish", start: 2020, end: 2100, title: "A vanishing act", location: "Party field · Bag End", map: "party-field", mapTitle: "Party Field", subtitle: "The ring does its work", desc: "Bilbo finishes his speech—and disappears before the astonished guests.", mode: "night" },
+        { id: "departure", start: 2100, end: 2840, title: "The road calls", location: "Bag End · front door", map: "bywater-road", mapTitle: "Bywater Road", subtitle: "A long holiday begins", desc: "Behind a closed door, Bilbo packs light, takes the old road, and leaves the party behind.", mode: "night" },
+        { id: "ring", start: 2840, end: 3480, title: "The thing in the envelope", location: "Bag End · study", map: "bag-end", mapTitle: "Bag End", subtitle: "A secret passed on", desc: "Frodo hears the truth about the ring, while Gandalf weighs what he has learned.", mode: "night" },
+        { id: "twilight", start: 3480, end: 3708, title: "Into the twilight", location: "The east road", map: "east-road", mapTitle: "East Road", subtitle: "The first step of the journey", desc: "The wizard’s figure fades into the evening. The road has begun.", mode: "night" }
+      ];
+
+      function formatTime(seconds) {
+        seconds = Math.max(0, Math.floor(Number(seconds) || 0));
+        var mins = Math.floor(seconds / 60);
+        var secs = String(seconds % 60).padStart(2, "0");
+        return mins + ":" + secs;
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, function (char) {
+          return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char];
+        });
+      }
+
+      function sceneFor(time) {
+        var found = scenes[0];
+        for (var i = 0; i < scenes.length; i += 1) {
+          if (time >= scenes[i].start && time < scenes[i].end) { found = scenes[i]; break; }
+        }
+        return found;
+      }
+
+      function cueIndexFor(time) {
+        var low = 0, high = cues.length - 1, answer = -1;
+        while (low <= high) {
+          var mid = Math.floor((low + high) / 2);
+          if (cues[mid].start <= time) { answer = mid; low = mid + 1; }
+          else { high = mid - 1; }
+        }
+        if (answer >= 0 && cues[answer].end < time - 1.5) {
+          return answer;
+        }
+        return answer;
+      }
+
+      function renderScenes() {
+        sceneList.innerHTML = scenes.map(function (scene) {
+          return '<a class="scene" href="?at=' + scene.start + '" data-start="' + scene.start + '" data-scene="' + scene.id + '" onclick="window.POC_SEEK && window.POC_SEEK(' + scene.start + ')">' +
+            '<span class="scene-time">' + formatTime(scene.start) + '</span>' +
+            '<span><span class="scene-title">' + escapeHtml(scene.title) + '</span>' +
+            '<span class="scene-detail">' + escapeHtml(scene.location) + '</span></span></a>';
+        }).join("");
+        sceneList.querySelectorAll(".scene").forEach(function (button) {
+          button.addEventListener("click", function (event) { event.preventDefault(); seek(Number(button.dataset.start)); });
+        });
+      }
+
+      function renderCues(index) {
+        if (!cues.length) {
+          cueList.innerHTML = '<div class="cue current">Transcript data could not be loaded.</div>';
+          return;
+        }
+        var start = Math.max(0, index - 1);
+        var end = Math.min(cues.length, start + 3);
+        cueList.innerHTML = cues.slice(start, end).map(function (cue, offset) {
+          var absolute = start + offset;
+          var state = absolute === index ? "current" : (absolute < index ? "past" : "");
+          var type = absolute === 0 ? " title-cue" : "";
+          return '<a class="cue ' + state + type + '" href="?at=' + cue.start + '" data-start="' + cue.start + '" onclick="window.POC_SEEK && window.POC_SEEK(' + cue.start + ')">' +
+            '<time>' + formatTime(cue.start) + '</time>' + escapeHtml(cue.text) + '</a>';
+        }).join("");
+        cueList.querySelectorAll(".cue").forEach(function (button) {
+          button.addEventListener("click", function (event) { event.preventDefault(); seek(Number(button.dataset.start)); });
+        });
+        var active = cueList.querySelector(".cue.current");
+        if (active) { active.scrollIntoView({ block: "nearest" }); }
+      }
+
+      function updateScene(time) {
+        var scene = sceneFor(time);
+        if (scene.id !== currentSceneId) {
+          currentSceneId = scene.id;
+          sceneTitle.textContent = scene.title;
+          sceneLocation.textContent = scene.location;
+          sceneDescription.textContent = scene.desc;
+          mapLocation.textContent = scene.mapTitle;
+          mapSubtitle.textContent = scene.subtitle;
+          map.classList.toggle("night", scene.mode === "night");
+          map.classList.toggle("day", scene.mode !== "night");
+          map.classList.toggle("party-time", Boolean(scene.fireworks));
+          document.querySelectorAll(".scene").forEach(function (button) {
+            button.classList.toggle("is-current", button.dataset.scene === scene.id);
+          });
+          document.querySelectorAll(".pin").forEach(function (pin) {
+            pin.classList.toggle("is-current", pin.dataset.place === scene.map);
+          });
+        }
+        var sceneLength = Math.max(1, scene.end - scene.start);
+        sceneProgress.style.width = Math.min(100, Math.max(0, ((time - scene.start) / sceneLength) * 100)) + "%";
+        var positions = {
+          "bag-end": [43, 42],
+          "hobbiton": [51, 49],
+          "party-field": [29, 32],
+          "bywater-road": [62, 56],
+          "east-road": [83, 70]
+        };
+        var target = positions[scene.map] || positions["bag-end"];
+        party.style.left = target[0] + "%";
+        party.style.top = target[1] + "%";
+      }
+
+      function updateTranscript(time) {
+        var next = cueIndexFor(time);
+        if (next !== currentCue) {
+          currentCue = next;
+          renderCues(currentCue);
+        }
+        cueStatus.textContent = next >= 0 && cues[next] ? formatTime(cues[next].start) + " · synced" : "waiting for audio";
+      }
+
+      function update() {
+        var time = Number(audio.currentTime) || 0;
+        updateScene(time);
+        updateTranscript(time);
+      }
+
+      function seek(seconds) {
+        audio.currentTime = Math.max(0, Math.min(Number(audio.duration) || 3708, seconds));
+        update();
+        if (audio.paused) { audio.play().catch(function () {}); }
+      }
+      window.POC_SEEK = seek;
+
+      function showNotice(text) {
+        notice.textContent = text;
+        notice.classList.add("visible");
+      }
+
+      audio.src = defaultAudio;
+      audio.addEventListener("error", function () {
+        showNotice("The browser could not open the MP3 directly from its local path. Use “Choose audio” to select the matching file from LOTR-Audiobook\\Part1.");
+      });
+      audio.addEventListener("timeupdate", update);
+      audio.addEventListener("loadedmetadata", update);
+      audio.addEventListener("durationchange", update);
+      document.getElementById("audio-file").addEventListener("change", function (event) {
+        var file = event.target.files && event.target.files[0];
+        if (!file) return;
+        if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+        audioObjectUrl = URL.createObjectURL(file);
+        audio.src = audioObjectUrl;
+        audioName.textContent = file.name;
+        notice.classList.remove("visible");
+        audio.load();
+      });
+      document.getElementById("jump-button").addEventListener("click", function () {
+        seek(audio.currentTime > 0 ? 0 : 0);
+        audio.play().catch(function () {});
+      });
+      document.querySelectorAll(".pin").forEach(function (pin) {
+        pin.addEventListener("click", function (event) { event.preventDefault(); seek(Number(pin.dataset.seek)); });
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.code === "Space" && event.target.tagName !== "INPUT") {
+          event.preventDefault();
+          if (audio.paused) audio.play().catch(function () {});
+          else audio.pause();
+        }
+      });
+
+      renderScenes();
+      renderCues(0);
+      updateScene(0);
+      updateTranscript(0);
+      var initialMatch = location.search.match(/[?&]at=([0-9.]+)/);
+      var initialAt = initialMatch ? Number(initialMatch[1]) : NaN;
+      if (Number.isFinite(initialAt) && initialAt >= 0) {
+        var initialAttempts = 0;
+        var applyInitialSeek = function () {
+          var targetTime = Math.min(Number(audio.duration) || 3708, initialAt);
+          audio.currentTime = targetTime;
+          update();
+          initialAttempts += 1;
+          if (initialAttempts < 3 && Math.abs(audio.currentTime - targetTime) > 1) {
+            window.setTimeout(applyInitialSeek, 220);
+          }
+        };
+        if (audio.readyState >= 1) window.setTimeout(applyInitialSeek, 80);
+        else audio.addEventListener("loadedmetadata", function () { window.setTimeout(applyInitialSeek, 80); }, { once: true });
+      }
+    }());
+  </script>
+  <script src="reading-state.js?v=5"></script>
+  <script src="journey-tracking.js?v=1"></script>
+  <script src="live-company.js?v=2"></script>
+  <script src="journey-app.js?v=pages-15"></script>
+  <script src="mobile-view.js?v=1"></script>
+  <script src="map-controls.js?v=1"></script>
+  <script src="book-player.js?v=2"></script>
+  <script src="atlas-viewer.js?v=1"></script>
+</body>
+</html>
