@@ -4,6 +4,8 @@ A local, book-shaped companion for the Phil Dragash *Lord of the Rings* soundsca
 
 **No account, build step, subscription, or runtime CDN.** The reader runs in your browser; Python serves your local audio with byte-range support for seeking.
 
+[Audio files and transcripts](https://drive.google.com/drive/folders/1SGywf6drca3D2m8BSEZBZU5WIZMAXqf1?usp=sharing)
+
 ![Desktop reader with the Shire map, transcript, character roster, custom player and saved bookmark](screenshots/desktop.png)
 
 ## Inside the book
