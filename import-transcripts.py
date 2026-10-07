@@ -10,10 +10,16 @@ def seconds(value):
     return int(h) * 3600 + int(m) * 60 + float(s)
 
 
+def caption_text(value):
+    # Diarization IDs describe detected voices, not words spoken in the story.
+    # Keep other bracketed text (e.g. sound cues) and all caption timing intact.
+    return ' '.join(re.sub(r'\[SPEAKER_\d+\]', ' ', value).split())
+
+
 def cues_from_srt(path):
     text = path.read_text(encoding='utf-8-sig').replace('\r\n', '\n')
     pattern = r'(\d{2}:\d{2}:\d{2}[,.]\d+)\s*-->\s*(\d{2}:\d{2}:\d{2}[,.]\d+)[^\n]*\n(.*?)(?=\n\s*\n|\Z)'
-    cues = [{'start': seconds(a), 'end': seconds(b), 'text': ' '.join(t.split())}
+    cues = [{'start': seconds(a), 'end': seconds(b), 'text': caption_text(t)}
             for a, b, t in re.findall(pattern, text, flags=re.S)]
     if not cues:
         raise ValueError(f'No timed captions in {path}')

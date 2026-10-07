@@ -46,7 +46,18 @@
       s.visited.forEach(p=>{layer.append(node('circle',{cx:p[0]*9.6,cy:p[1]*6.2,r:3,fill:'#946738',opacity:.55}));});
       const x=s.position[0]*9.6,y=s.position[1]*6.2;
       const title=node('title');title.textContent='Focus party near '+s.scene.mapTitle+' · scene-level positions';layer.append(title);
-      const cy=Math.max(24,Math.min(590,y-35)),start=Math.max(25,Math.min(935-(names.length-1)*25,x-(names.length-1)*12.5));
+      // Keep the roster near the scene without covering place names. Use the
+      // map's label bounds, shared with exports, rather than screen pixels.
+      const labels=(window.POC_ATLAS_MAPS?.[s.region]?.labelLayout||[]).map(a=>a.box);
+      const width=(names.length-1)*25+26;
+      let best;
+      for(const [dx,dy] of [[0,-45],[0,45],[-width/2-25,0],[width/2+25,0],[0,-80],[0,80],[-width/2-25,-45],[width/2+25,-45]]) {
+        const left=Math.max(48,Math.min(912-width,x+dx-width/2)),top=Math.max(104,Math.min(524,y+dy-13));
+        const collisions=labels.reduce((sum,b)=>sum+Math.max(0,Math.min(left+width,b.x+b.w)-Math.max(left,b.x))*Math.max(0,Math.min(top+26,b.y+b.h)-Math.max(top,b.y)),0);
+        const score=collisions*30+Math.hypot(left+width/2-x,top+13-y);
+        if(!best||score<best.score) best={left,top,score};
+      }
+      const cy=best.top+13,start=best.left+13;
       layer.append(node('path',{d:'M'+x+' '+y+'L'+(start+(names.length-1)*12.5)+' '+cy,stroke:'#735039','stroke-width':1,'stroke-dasharray':'2 3',fill:'none'}));
       names.forEach((name,i)=>{const p=profiles[name],g=node('g',{'class':'companion-token'}),t=node('title');t.textContent=name+' · '+p[1]+' · near the current scene';g.append(t);g.append(node('circle',{cx:start+i*25,cy,r:name===selected?12:10,fill:p[2],stroke:'#f1dfb4','stroke-width':2}));const label=node('text',{x:start+i*25,y:cy+3.5,'text-anchor':'middle',fill:'#fff0d3','font-size':9,'font-family':'Georgia,serif','font-weight':'bold'});label.textContent=p[0];g.append(label);layer.append(g);});
       svg.append(layer);

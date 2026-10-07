@@ -2,6 +2,10 @@
 
 Twelve original SVG illustrations, covering every map used by the 62 audiobook chapters. Open `atlas.html` to browse the whole set, or use the expand symbol above the reader's map. Enlarged maps include Fit and Zoom controls. The reader remains fully local.
 
+The expanded edition contains **117 landmark records** and a searchable atlas with geographic notes for every region. All views share one data source. Rivers use blue-green ink; deciduous, evergreen and golden woods have distinct colors; mountain faces, snowcaps and foothill hatching separate relief from roads. Labels are placed with collision avoidance and leader lines where needed. These relief marks are illustration, not measured contours.
+
+Additional corrections include the Bywater Pool and Thistle Brook connection; separate records for Moria's underground bridge and East-gate; an off-map approach waypoint from Rivendell rather than placing it in Hollin; Snowbourn and the mouths of Entwash; Cair Andros as a long river island; Ciril and Erui tributaries in Gondor; and Mount Doom west and slightly north of Barad-dûr. The latter follows the relative placement on Christopher Tolkien's southern map. Added Shire details include Brockenborings, Tookbank, Brandy Hall and the Three-Farthing Stone. These coordinates express regional relationships rather than exact distances.
+
 ## Geographic basis
 
 Rebuilt against these published maps, viewed through Tolkien Gateway:
@@ -13,6 +17,8 @@ Rebuilt against these published maps, viewed through Tolkien Gateway:
 Additional descriptions consulted: [the Water](https://tolkiengateway.net/wiki/The_Water), [the Old Forest](https://tolkiengateway.net/wiki/Old_Forest), [Withywindle](https://tolkiengateway.net/wiki/Withywindle), [the Last Bridge](https://tolkiengateway.net/wiki/Last_Bridge), [the Ford of Bruinen](https://tolkiengateway.net/wiki/Ford_of_Bruinen), [Lothlórien](https://tolkiengateway.net/wiki/Lothl%C3%B3rien), and [the Grey Havens](https://tolkiengateway.net/wiki/Grey_Havens).
 
 These are interpretive regional journey maps, not exact reproductions or surveyed topography. Relative directions, named rivers, mountain barriers, and settlement relationships follow the references. Each plate uses its own simplified scale. Terrain hatching, individual trees, buildings, and small ground marks are illustrative. Dotted walking routes approximate the narrative; dashed lines denote roads. The Moria crossing represents an underground passage. River travel can coincide with the river line. There is no invented numerical scale bar.
+
+The expanded edition also checks [Snowbourn's northward course past Edoras and eastward bend](https://tolkiengateway.net/wiki/Snowbourn) and [Henneth Annûn's position northeast of Cair Andros](https://tolkiengateway.net/wiki/Henneth_Ann%C3%BBn). The refuge uses a cave-and-waterfall symbol, rather than a village symbol.
 
 ## Corrections in this edition
 
@@ -42,7 +48,9 @@ The other 16 chapters retain approximate chapter-percentage timing. Nearby event
 - `atlas-maps.js`: authored map data, terrain drawing, shared location coordinates.
 - `atlas.css`: map typography and enlarged viewer styling.
 - `atlas-viewer.js`: enlarged view and zoom controls.
-- `atlas.html`: browse all twelve plates; select one to open its chapter.
+- `atlas.html`, `atlas-explorer.js`, `atlas-explorer.css`: browse twelve plates and search places without changing the listening position.
+- `atlas-navigation.js`: shared zoom, pan, pinch and keyboard navigation.
+- `export-atlas.cjs`: rebuild all standalone plates from the same map source.
 - `maps/*.svg`: standalone scalable exports, usable without the audiobook app.
 
 Source maps are referenced, not embedded or downloaded into the application. All map art and lettering render locally without network requests.

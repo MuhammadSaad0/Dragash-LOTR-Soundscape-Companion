@@ -19,6 +19,16 @@ def module(name):
 
 
 class LocalReaderTests(unittest.TestCase):
+    def test_speaker_metadata_is_not_reading_text(self):
+        importer = module('import-transcripts')
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'voices.srt'
+            path.write_text('1\n00:00:00,900 --> 00:00:03,320\n[SPEAKER_0] A voice speaks.\n[SPEAKER_12] Another answers.\n\n2\n00:00:04,000 --> 00:00:05,500\n[music] The word speaker stays.\n', encoding='utf-8')
+            self.assertEqual(importer.cues_from_srt(path), [
+                {'start': 0.9, 'end': 3.32, 'text': 'A voice speaks. Another answers.'},
+                {'start': 4.0, 'end': 5.5, 'text': '[music] The word speaker stays.'},
+            ])
+
     def test_srt(self):
         importer = module('import-transcripts')
         with tempfile.TemporaryDirectory() as folder:
