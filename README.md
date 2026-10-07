@@ -6,12 +6,15 @@ A local, book-shaped companion for the Phil Dragash *Lord of the Rings* soundsca
 
 [Audio files and transcripts](https://drive.google.com/drive/folders/1SGywf6drca3D2m8BSEZBZU5WIZMAXqf1?usp=sharing)
 
-![Desktop reader with the Shire map, transcript, character roster, custom player and saved bookmark](screenshots/desktop.png)
+![Desktop reader with the expanded Shire map, transcript, character roster and custom player](screenshots/updated-reader.jpg)
+
+![Searchable Westlands atlas with colored terrain and regional map controls](screenshots/updated-atlas.jpg)
 
 ## Inside the book
 
 - **62 chapters across all three volumes**, with a grouped chapter picker.
-- **Twelve original regional map plates**, with zoom, drag-to-pan, Fit, Find company, and an enlarged atlas viewer.
+- **Twelve original regional map plates** with colored relief, forests and waterways, 117 landmarks, collision-aware labels, and a shared 1–5× zoom/pan viewer.
+- **Searchable regional atlas:** find places (with or without accents), inspect geographic notes, hide approximate journeys, and save scalable SVG plates.
 - **Complete chapter transcripts**, loaded up front. Click a passage to seek; the current passage is highlighted during playback.
 - **Custom audio controls:** play/pause, ±15 seconds, seek, mute/volume, and 0.75–2× playback speed.
 - **Local bookmarks:** last chapter, each chapter's playback position, volume and speed. Reopening starts paused. The saved-time badge sits below the chapter controls.
@@ -43,8 +46,8 @@ Screenshots show the app using a personal local media collection. Recordings and
 ### 1. Clone
 
 ```sh
-git clone https://github.com/MuhammadSaad0/LOTR-Phil-Dragash-Soundscape.git
-cd LOTR-Phil-Dragash-Soundscape
+git clone https://github.com/MuhammadSaad0/Dragash-LOTR-Soundscape-Companion.git
+cd Dragash-LOTR-Soundscape-Companion
 ```
 
 ### 2. Arrange your local files
@@ -66,13 +69,15 @@ LOTR-Audiobook/
 
 `chapter-catalog.json` lists the expected audio filenames and chapter ordering. SRT files can live in numbered chapter directories as above, or be directly named `01 - Chapter title.srt` in the relevant Part directory. Chapter numbering restarts within each part. The importer requires exactly one SRT per chapter and imports all 62 chapters.
 
+On Windows, if your media is in Downloads, run `python import-downloads.py`. It finds catalogued MP3s in extracted subfolders and `Part1*.zip`, `Part2*.zip`, or `Part3*.zip` archives and imports them into `Documents/LOTR-Audiobook`. It uses hard links for extracted files on the same disk (no duplicate audio storage), leaves downloads untouched, and reports missing tracks. Re-run after downloading missing parts. Existing library files are preserved. A different source and destination can be passed with `python import-downloads.py "D:/Downloads" --destination "D:/LOTR-Audiobook"`.
+
 ### 3. Import your transcripts
 
 ```sh
 python import-transcripts.py "/path/to/LOTR-Audiobook/Transcripts"
 ```
 
-This creates the private, git-ignored `transcript-data.js`. It preserves timed caption text and does not run speech recognition or upload anything. Re-running replaces that generated file only after all chapters have been parsed successfully.
+This creates the private, git-ignored `transcript-data.js`. It preserves caption timing and removes automatic `[SPEAKER_0]`-style voice labels from the reading text, leaving other bracketed cues intact. It does not run speech recognition or upload anything, and the original SRTs remain untouched. Re-running replaces that generated file only after all chapters have been parsed successfully.
 
 ### 4. Start the reader
 
@@ -99,6 +104,8 @@ Stop an older server using the same port before starting this one, or use `--por
 | Drag seek bar | Seek while preserving play/pause state |
 | ±15 buttons | Skip backward / forward |
 | Fit / + / − / Find company | Explore the map; drag while zoomed |
+| Double-click / pinch / Ctrl+wheel | Zoom around the map location |
+| + / − / arrows / Home, while a map is focused | Zoom, pan, fit (does not turn chapters) |
 | Character name / Field notes | Select a companion and inspect the current setting |
 | Both / Map / Read | Change the mobile layout |
 
@@ -136,6 +143,7 @@ The server binds to **127.0.0.1 only**. It is a local development server, not a 
 ```sh
 python -m unittest discover -s tests -p "test_*.py"
 node tests/test-live-company.cjs
+node tests/test-atlas.cjs
 node --check journey-app.js
 node --check reading-state.js
 node --check book-player.js
@@ -148,6 +156,8 @@ node tests/test-red-book.cjs
 ```
 
 Responsive views were checked at 390×844 and 320×640 with no document overflow. Desktop/mobile screenshots are from the current layout; this is not exhaustive cross-browser testing. Map/timeline data validation covers all authored milestones, and companion tests verify that unchanged playback does not rewrite the companion UI.
+
+After editing map data or map typography, run `node export-atlas.cjs` to regenerate `maps/*.svg`. The reader, enlarged viewer and atlas explorer use `atlas-maps.js` directly. The SVG exports use system serif fonts so they remain portable without network/font dependencies.
 
 ## Troubleshooting
 
