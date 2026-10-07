@@ -128,11 +128,14 @@ Character tokens show the **narrative-focus group near a scene**, not exact inde
 | `reading-state.js` | Bookmarks and page-fold animation |
 | `book-player.js`, `book-player.css` | Custom media controls |
 | `atlas-maps.js`, `atlas.css`, `maps/` | Authored geography, SVG rendering and standalone plates |
-| `atlas-viewer.js`, `atlas.html`, `map-controls.js` | Enlarged atlas, gallery and map exploration |
+| `atlas-navigation.js`, `atlas-viewer.js`, `map-controls.js` | Shared map navigation, enlarged viewer and reader controls |
+| `atlas.html`, `atlas-explorer.js`, `atlas-explorer.css` | Searchable atlas, geographic notes and SVG downloads |
+| `export-atlas.cjs` | Regenerate standalone SVG plates from the authored maps |
 | `journey-tracking.js` | Transcript-linked milestones |
 | `live-company.js`, `live-company.css` | Companion groups and field notes |
 | `mobile-view.js` | Mobile layout switching |
 | `chapter-catalog.json`, `import-transcripts.py` | Public chapter metadata and private SRT import |
+| `import-downloads.py` | Import downloaded audio into the local media library |
 | `local-server.py`, `run-poc.cmd` | Local byte-range media server and Windows launcher |
 | `fonts/`, `binding.svg`, `screenshots/` | Offline fonts, original leather artwork and previews |
 
